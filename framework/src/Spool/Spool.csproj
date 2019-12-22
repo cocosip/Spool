@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\..\build\common.props" />
   <PropertyGroup>
@@ -7,5 +7,8 @@
     <PackageId>Spool</PackageId>
     <Description>File Storage Pool</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.0" />
+  </ItemGroup>
 
 </Project>
