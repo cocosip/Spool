@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Spool.Group;
 using Spool.Utility;
 using System;
 using System.Collections.Concurrent;

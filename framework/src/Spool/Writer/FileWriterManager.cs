@@ -6,35 +6,37 @@ using System.Threading;
 
 namespace Spool.Writer
 {
-    public class FileWriterManager
+    public class FileWriterManager : IFileWriterManager
     {
-        public string GroupName { get; }
-
         private ConcurrentQueue<FileWriter> _fileWriterQueue = new ConcurrentQueue<FileWriter>();
 
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
-        private readonly SpoolOption _option;
+        private readonly FileWriterOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriterManager(IServiceProvider provider, ILogger<FileWriterManager> logger, SpoolOption option, string groupName)
+        public FileWriterManager(IServiceProvider provider, ILogger<FileWriterManager> logger, FileWriterOption option)
         {
             _provider = provider;
             _logger = logger;
-            GroupName = groupName;
             _option = option;
-            _semaphoreSlim = new SemaphoreSlim(1, option.GroupMaxFileWriters);
+            _semaphoreSlim = new SemaphoreSlim(1, option.MaxFileWriterCount);
         }
 
         public void Initialize()
         {
-            for (int i = 0; i < _option.GroupMaxFileWriters; i++)
+            for (int i = 0; i < _option.MaxFileWriterCount; i++)
             {
                 var fileWriter = _provider.GetService<FileWriter>();
                 _fileWriterQueue.Enqueue(fileWriter);
             }
+        }
+
+        public FileWriterOption GetFileWriterOption()
+        {
+            return _option;
         }
 
         /// <summary>Get a file writer
@@ -43,7 +45,7 @@ namespace Spool.Writer
         {
             if (!_fileWriterQueue.TryDequeue(out FileWriter fileWriter))
             {
-                _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", GroupName);
+                _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.GroupName);
                 _semaphoreSlim.Wait(5000);
             }
             _logger.LogDebug("Get fileWriter from queue,{0}", fileWriter);

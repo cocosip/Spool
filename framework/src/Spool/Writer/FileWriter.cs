@@ -11,14 +11,12 @@ namespace Spool.Writer
     {
         public string Id { get; }
         private readonly ILogger _logger;
-        private readonly SpoolOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriter(ILogger<FileWriter> logger, SpoolOption option)
+        public FileWriter(ILogger<FileWriter> logger)
         {
             _logger = logger;
-            _option = option;
             Id = Guid.NewGuid().ToString("N");
         }
 

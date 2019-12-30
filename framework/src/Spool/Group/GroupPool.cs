@@ -1,17 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Spool.Utility;
 using Spool.Writer;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Spool.Dependency;
-using System.IO;
-using Spool.Utility;
 using System.Collections.Concurrent;
+using System.IO;
+using System.Threading.Tasks;
 
-namespace Spool
+namespace Spool.Group
 {
     /// <summary>Group filePool,store files by group
     /// </summary>
@@ -27,7 +23,7 @@ namespace Spool
         private readonly ILogger _logger;
         private readonly SpoolOption _option;
         private readonly IdGenerator _idGenerator;
-        private readonly FileWriterManager _fileWriterManager;
+        private readonly IFileWriterManager _fileWriterManager;
 
 
         /// <summary>Ctor
@@ -40,11 +36,15 @@ namespace Spool
             _idGenerator = idGenerator;
 
             _spoolFileDict = new ConcurrentDictionary<string, SpoolFile>();
-
             GroupName = groupName;
-            GroupPath = Path.Combine(_option.RootPath, $"{Path.AltDirectorySeparatorChar}{GroupName}");
-            _fileWriterManager = provider.CreateInstance<FileWriterManager>(groupName);
 
+            using (var scope = _provider.CreateScope())
+            {
+                var fileWriterOption = scope.ServiceProvider.GetService<FileWriterOption>();
+                fileWriterOption.GroupName = groupName;
+                fileWriterOption.MaxFileWriterCount = _option.GroupMaxFileWriterCount;
+                _fileWriterManager = scope.ServiceProvider.GetService<IFileWriterManager>();
+            }
         }
 
         public void Initialize()

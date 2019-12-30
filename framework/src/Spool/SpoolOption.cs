@@ -16,7 +16,11 @@ namespace Spool
 
         /// <summary>每个组文件池下最大文件写入的线程数
         /// </summary>
-        public int GroupMaxFileWriters { get; set; }
+        public int GroupMaxFileWriterCount { get; set; }
+
+        /// <summary>文件较大时,文件写入的每个分片的大小(默认5Mb)
+        /// </summary>
+        public int FileWriteSliceSize { get; set; } = 1024 * 1024 * 5;
 
         /// <summary>监控目录
         /// </summary>

@@ -15,7 +15,5 @@
         /// <summary>File save full path
         /// </summary>
         public string Path { get; set; }
-
-
     }
 }

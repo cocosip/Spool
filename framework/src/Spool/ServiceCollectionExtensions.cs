@@ -22,7 +22,10 @@ namespace Spool
             services
                 .AddSingleton<IdGenerator>()
                 .AddSingleton<SpoolOption>(option)
-                .AddSingleton<FilePool>();
+                .AddSingleton<FilePool>()
+                .AddScoped<FileWriterOption>()
+                .AddScoped<IFileWriterManager, FileWriterManager>()
+                ;
 
             return services;
         }
