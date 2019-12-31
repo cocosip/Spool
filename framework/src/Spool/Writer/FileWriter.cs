@@ -11,12 +11,14 @@ namespace Spool.Writer
     {
         public string Id { get; }
         private readonly ILogger _logger;
+        private readonly FileWriterOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriter(ILogger<FileWriter> logger)
+        public FileWriter(ILogger<FileWriter> logger, FileWriterOption option)
         {
             _logger = logger;
+            _option = option;
             Id = Guid.NewGuid().ToString("N");
         }
 
@@ -41,7 +43,7 @@ namespace Spool.Writer
         public Task WriteFileAsync(Stream stream, string targetPath)
         {
             return WriteFileInternal(stream, targetPath);
-        } 
+        }
 
         private Task WriteFileInternal(Stream stream, string targetPath)
         {
@@ -50,7 +52,7 @@ namespace Spool.Writer
                 using (FileStream fw = File.OpenWrite(targetPath))
                 {
                     //设置缓冲区大小
-                    byte[] buffers = new byte[1024 * 1024 * 5];
+                    byte[] buffers = new byte[_option.FileWriteSliceSize];
                     //读取一次
                     int r = stream.Read(buffers, 0, buffers.Length);
                     //判断本次是否读取到了数据

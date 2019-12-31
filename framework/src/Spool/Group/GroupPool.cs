@@ -13,35 +13,48 @@ namespace Spool.Group
     /// </summary>
     public class GroupPool
     {
-        public string GroupName { get; }
+        public bool IsRunning { get { return _isRunning; } }
+        private bool _isRunning = false;
+        public string GroupName { get { return _descriptor.GroupName; } }
+        public string GroupPath { get { return _descriptor.GroupPath; } }
 
-        public string GroupPath { get; }
+        private ConcurrentQueue<SpoolFile> _spoolFileQueue;
 
         private ConcurrentDictionary<string, SpoolFile> _spoolFileDict;
 
+
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
+        private GroupPoolDescriptor _descriptor;
         private readonly SpoolOption _option;
         private readonly IdGenerator _idGenerator;
+        private readonly ITrainManager _trainManager;
         private readonly IFileWriterManager _fileWriterManager;
 
 
         /// <summary>Ctor
         /// </summary>
-        public GroupPool(IServiceProvider provider, ILogger<GroupPool> logger, SpoolOption option, IdGenerator idGenerator, string groupName)
+        public GroupPool(IServiceProvider provider, ILogger<GroupPool> logger, SpoolOption option, IdGenerator idGenerator, GroupPoolDescriptor descriptor)
         {
             _provider = provider;
             _logger = logger;
             _option = option;
             _idGenerator = idGenerator;
+            _descriptor = descriptor;
 
+            _spoolFileQueue = new ConcurrentQueue<SpoolFile>();
             _spoolFileDict = new ConcurrentDictionary<string, SpoolFile>();
-            GroupName = groupName;
+
 
             using (var scope = _provider.CreateScope())
             {
+                var groupPoolDescriptor = scope.ServiceProvider.GetService<GroupPoolDescriptor>();
+                groupPoolDescriptor.GroupName = descriptor.GroupName;
+                groupPoolDescriptor.GroupPath = descriptor.GroupPath;
+                _trainManager = scope.ServiceProvider.GetService<ITrainManager>();
+
                 var fileWriterOption = scope.ServiceProvider.GetService<FileWriterOption>();
-                fileWriterOption.GroupName = groupName;
+                fileWriterOption.GroupName = _descriptor.GroupName;
                 fileWriterOption.MaxFileWriterCount = _option.GroupMaxFileWriterCount;
                 _fileWriterManager = scope.ServiceProvider.GetService<IFileWriterManager>();
             }
@@ -55,17 +68,30 @@ namespace Spool.Group
             }
             if (DirectoryHelper.CreateIfNotExists(GroupPath))
             {
-                _logger.LogInformation("GroupPool create groupPath '{0}'.", GroupPath);
+                _logger.LogInformation("GroupPool create group '{0}' , groupPath '{1}'.", GroupName, GroupPath);
             }
-            //ReadAllFiles from files
+        }
 
+        /// <summary>Run
+        /// </summary>
+        public void Run()
+        {
+            if (_isRunning)
+            {
+                _logger.LogWarning("GroupPool is in running, GroupName '{0}',GroupPath '{1}'.", GroupName, GroupPath);
+                return;
+            }
+            _isRunning = true;
         }
 
 
 
 
-
-
+        /// <summary>Write file to real path
+        /// </summary>
+        /// <param name="stream">File stream</param>
+        /// <param name="ext">File extension</param>
+        /// <returns></returns>
         private Task<SpoolFile> WriteFileInternal(Stream stream, string ext)
         {
             return Task.Run<SpoolFile>(() =>

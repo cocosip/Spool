@@ -10,7 +10,13 @@
 
         /// <summary>The max file writer count
         /// </summary>
-        public int MaxFileWriterCount { get; set; }
+        public int MaxFileWriterCount { get; set; } = 10;
+
+        /// <summary>The file write item slice size
+        /// </summary>
+        public int FileWriteSliceSize { get; set; } = 1024 * 1024 * 5;
+
+
 
         public override string ToString()
         {

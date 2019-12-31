@@ -4,7 +4,7 @@ namespace Spool
 {
     /// <summary>配置信息
     /// </summary>
-    public class SpoolOption
+    public class FilePoolOption
     {
         /// <summary>存储根目录,默认文件都会存储到该目录下,当目录存储数量达到一定的阈值的时候,会存储到扩展目录下
         /// </summary>
@@ -14,28 +14,9 @@ namespace Spool
         /// </summary>
         public string DefaultGroup { get; set; }
 
-
-        /// <summary>最大序列的数量(默认5000)
-        /// </summary>
-        public int MaxTrainCount { get; set; } = 5000;
-
-        /// <summary>每个序列下最大的文件数量(默认65534)
-        /// </summary>
-        public int MaxTrainFileCount { get; set; } = 65534;
-
         /// <summary>每个组文件池下最大文件写入的线程数
         /// </summary>
-        public int GroupMaxFileWriterCount { get; set; }
-
-        /// <summary>文件较大时,文件写入的每个分片的大小(默认5Mb)
-        /// </summary>
-        public int FileWriteSliceSize { get; set; } = 1024 * 1024 * 5;
-        
-        /// <summary>每个GroupPool下在在到内存队列中的最大的数量
-        /// </summary>
-        public int MaxSpoolFileQueueCount { get; set; } = 100000;
-
-
+        public int GroupMaxFileWriters { get; set; }
 
         /// <summary>监控目录
         /// </summary>
@@ -47,7 +28,7 @@ namespace Spool
 
         /// <summary>初始化基本配置
         /// </summary>
-        public SpoolOption()
+        public FilePoolOption()
         {
             RootPath = @"D:\Spool";
             DefaultGroup = "Default";

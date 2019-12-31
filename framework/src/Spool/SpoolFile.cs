@@ -4,6 +4,10 @@
     /// </summary>
     public class SpoolFile
     {
+        /// <summary>UniqueId
+        /// </summary>
+        public long Id { get; set; }
+
         /// <summary>FileName
         /// </summary>
         public string FileName { get; set; }

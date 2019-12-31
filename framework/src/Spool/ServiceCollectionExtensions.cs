@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Spool.Group;
+using Spool.Scheduling;
 using Spool.Utility;
 using Spool.Writer;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Spool
 {
@@ -19,10 +19,15 @@ namespace Spool
             var option = new SpoolOption();
             configure?.Invoke(option);
 
+
             services
                 .AddSingleton<IdGenerator>()
+                .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<SpoolOption>(option)
                 .AddSingleton<FilePool>()
+                .AddTransient<IGroupPoolManager, GroupPoolManager>()
+                .AddScoped<GroupPoolDescriptor>()
+                .AddScoped<ITrainManager, TrainManager>()
                 .AddScoped<FileWriterOption>()
                 .AddScoped<IFileWriterManager, FileWriterManager>()
                 ;
