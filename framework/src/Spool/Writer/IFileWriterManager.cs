@@ -4,6 +4,8 @@
     {
         void Initialize();
 
+        /// <summary>Get option
+        /// </summary>
         FileWriterOption GetFileWriterOption();
 
         /// <summary>Get a file writer

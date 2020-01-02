@@ -8,7 +8,7 @@ namespace Spool.Writer
 {
     public class FileWriterManager : IFileWriterManager
     {
-        private ConcurrentQueue<FileWriter> _fileWriterQueue = new ConcurrentQueue<FileWriter>();
+        private readonly ConcurrentStack<FileWriter> _fileWriterStack;
 
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly IServiceProvider _provider;
@@ -22,6 +22,9 @@ namespace Spool.Writer
             _provider = provider;
             _logger = logger;
             _option = option;
+
+            _fileWriterStack = new ConcurrentStack<FileWriter>();
+
             _semaphoreSlim = new SemaphoreSlim(1, option.MaxFileWriterCount);
         }
 
@@ -30,10 +33,12 @@ namespace Spool.Writer
             for (int i = 0; i < _option.MaxFileWriterCount; i++)
             {
                 var fileWriter = _provider.GetService<FileWriter>();
-                _fileWriterQueue.Enqueue(fileWriter);
+                _fileWriterStack.Push(fileWriter);
             }
         }
 
+        /// <summary>Get option
+        /// </summary>
         public FileWriterOption GetFileWriterOption()
         {
             return _option;
@@ -43,7 +48,7 @@ namespace Spool.Writer
         /// </summary>
         public FileWriter Get()
         {
-            if (!_fileWriterQueue.TryDequeue(out FileWriter fileWriter))
+            if (!_fileWriterStack.TryPop(out FileWriter fileWriter))
             {
                 _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.GroupName);
                 _semaphoreSlim.Wait(5000);
@@ -58,7 +63,7 @@ namespace Spool.Writer
         {
             if (fileWriter != null)
             {
-                _fileWriterQueue.Enqueue(fileWriter);
+                _fileWriterStack.Push(fileWriter);
                 _semaphoreSlim.Release();
             }
         }

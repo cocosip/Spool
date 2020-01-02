@@ -42,6 +42,7 @@ namespace Spool.Group
             _idGenerator = idGenerator;
             _descriptor = descriptor;
 
+
             _spoolFileQueue = new ConcurrentQueue<SpoolFile>();
             _spoolFileDict = new ConcurrentDictionary<string, SpoolFile>();
 

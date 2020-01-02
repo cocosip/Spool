@@ -23,4 +23,8 @@
     <ProjectReference Include="..\..\src\Spool\Spool.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Writer\" />
+  </ItemGroup>
+
 </Project>
