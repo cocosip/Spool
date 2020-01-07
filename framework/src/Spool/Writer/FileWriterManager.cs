@@ -10,7 +10,7 @@ namespace Spool.Writer
     {
         private readonly ConcurrentStack<FileWriter> _fileWriterStack;
 
-        private readonly SemaphoreSlim _semaphoreSlim;
+        private readonly AutoResetEvent _autoResetEvent;
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
         private readonly FileWriterOption _option;
@@ -24,8 +24,7 @@ namespace Spool.Writer
             _option = option;
 
             _fileWriterStack = new ConcurrentStack<FileWriter>();
-
-            _semaphoreSlim = new SemaphoreSlim(1, option.MaxFileWriterCount);
+            _autoResetEvent = new AutoResetEvent(false);
         }
 
         public void Initialize()
@@ -51,7 +50,7 @@ namespace Spool.Writer
             if (!_fileWriterStack.TryPop(out FileWriter fileWriter))
             {
                 _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.GroupName);
-                _semaphoreSlim.Wait(5000);
+                _autoResetEvent.WaitOne();
             }
             _logger.LogDebug("Get fileWriter from queue,{0}", fileWriter);
             return fileWriter;
@@ -64,8 +63,8 @@ namespace Spool.Writer
             if (fileWriter != null)
             {
                 _fileWriterStack.Push(fileWriter);
-                _semaphoreSlim.Release();
             }
+            _autoResetEvent.Set();
         }
     }
 }

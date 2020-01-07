@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Spool.Scheduling;
 using Spool.Utility;
 using Spool.Writer;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spool.Group
@@ -13,18 +16,21 @@ namespace Spool.Group
     /// </summary>
     public class GroupPool
     {
-        public bool IsRunning { get { return _isRunning; } }
-        private bool _isRunning = false;
+        public bool IsRunning { get { return _isRunning == 1; } }
+        private int _isRunning = 0;
         public string GroupName { get { return _descriptor.GroupName; } }
         public string GroupPath { get { return _descriptor.GroupPath; } }
 
-        private ConcurrentQueue<SpoolFile> _spoolFileQueue;
+        private readonly ConcurrentQueue<SpoolFile> _spoolFileQueue;
 
-        private ConcurrentDictionary<string, SpoolFile> _spoolFileDict;
+        private readonly ConcurrentDictionary<string, SpoolFile> _processingFileDict;
+        private List<Train> _trains;
 
 
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
+        private readonly IScheduleService _scheduleService;
+
         private GroupPoolDescriptor _descriptor;
         private readonly SpoolOption _option;
         private readonly IdGenerator _idGenerator;
@@ -34,17 +40,20 @@ namespace Spool.Group
 
         /// <summary>Ctor
         /// </summary>
-        public GroupPool(IServiceProvider provider, ILogger<GroupPool> logger, SpoolOption option, IdGenerator idGenerator, GroupPoolDescriptor descriptor)
+        public GroupPool(IServiceProvider provider, ILogger<GroupPool> logger, IScheduleService scheduleService, SpoolOption option, IdGenerator idGenerator, GroupPoolDescriptor descriptor)
         {
             _provider = provider;
             _logger = logger;
+            _scheduleService = scheduleService;
+
             _option = option;
             _idGenerator = idGenerator;
             _descriptor = descriptor;
 
 
             _spoolFileQueue = new ConcurrentQueue<SpoolFile>();
-            _spoolFileDict = new ConcurrentDictionary<string, SpoolFile>();
+            _processingFileDict = new ConcurrentDictionary<string, SpoolFile>();
+            _trains = new List<Train>();
 
 
             using (var scope = _provider.CreateScope())
@@ -71,18 +80,28 @@ namespace Spool.Group
             {
                 _logger.LogInformation("GroupPool create group '{0}' , groupPath '{1}'.", GroupName, GroupPath);
             }
+
+            _trains = _trainManager.FindTrains();
+
         }
 
-        /// <summary>Run
+        /// <summary>Start
         /// </summary>
-        public void Run()
+        public void Start()
         {
-            if (_isRunning)
+            if (_isRunning == 1)
             {
                 _logger.LogWarning("GroupPool is in running, GroupName '{0}',GroupPath '{1}'.", GroupName, GroupPath);
                 return;
             }
-            _isRunning = true;
+            Interlocked.Exchange(ref _isRunning, 1);
+        }
+
+        /// <summary>Shutdown the groupPool
+        /// </summary>
+        public void Shutdown()
+        {
+            Interlocked.Exchange(ref _isRunning, 0);
         }
 
 
@@ -129,6 +148,10 @@ namespace Spool.Group
         {
             return $"{_idGenerator.GenerateId()}{ext}";
         }
+
+
+
+
 
 
 

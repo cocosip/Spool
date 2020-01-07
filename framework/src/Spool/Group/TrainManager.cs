@@ -44,7 +44,7 @@ namespace Spool.Group
         /// </summary>
         public bool IsTrainName(string name)
         {
-            var pattern = @"^_[0-9]{5}_$";
+            var pattern = @"^_[0-9]{6}_$";
             return Regex.IsMatch(name, pattern);
         }
 

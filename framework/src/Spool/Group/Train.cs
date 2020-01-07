@@ -10,9 +10,9 @@
         /// </summary>
         public int Index { get; set; }
 
-        /// <summary>Name, format index. exp: _00001_, _00002_
+        /// <summary>Name, format index. exp: _000001_, _000002_
         /// </summary>
-        public string Name { get { return $"_{Index.ToString().PadLeft(5, '0')}_"; } }
+        public string Name { get { return $"_{Index.ToString().PadLeft(6, '0')}_"; } }
 
         /// <summary>Ctor
         /// </summary>

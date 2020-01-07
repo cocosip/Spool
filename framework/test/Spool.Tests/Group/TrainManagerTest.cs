@@ -12,7 +12,7 @@ namespace Spool.Tests.Group
     public class TrainManagerTest
     {
         [Theory]
-        [InlineData("_000000001_", 1)]
+        [InlineData("_00000001_", 1)]
         [InlineData("_x0002", 0)]
         [InlineData("_6003_", 6003)]
         public void GetTrainIndex_Test(string name, int? expected)
@@ -30,9 +30,9 @@ namespace Spool.Tests.Group
 
 
         [Theory]
-        [InlineData("_00001_", true)]
-        [InlineData("_23000_", true)]
-        [InlineData("_00002", false)]
+        [InlineData("_000001_", true)]
+        [InlineData("_230000_", true)]
+        [InlineData("_000002", false)]
         [InlineData("_x3_", false)]
         public void IsTrainName_Test(string name, bool expected)
         {
@@ -59,8 +59,8 @@ namespace Spool.Tests.Group
             DirectoryHelper.CreateIfNotExists(descriptor.GroupPath);
             ITrainManager trainManager = new TrainManager(LoggerHelper.GetLogger<TrainManager>(), descriptor);
 
-            var train1Path = Path.Combine(descriptor.GroupPath, "_00001_");
-            var train2Path = Path.Combine(descriptor.GroupPath, "_00002_");
+            var train1Path = Path.Combine(descriptor.GroupPath, "_000001_");
+            var train2Path = Path.Combine(descriptor.GroupPath, "_000002_");
 
             DirectoryHelper.CreateIfNotExists(train1Path);
             DirectoryHelper.CreateIfNotExists(train2Path);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Spool
 {
@@ -12,9 +13,9 @@ namespace Spool
     /// </summary>
     public class FilePool
     {
-        public bool IsRunning { get { return _isRunning; } }
+        public bool IsRunning { get { return _isRunning == 1; } }
         public string Id { get; }
-        private bool _isRunning = false;
+        private int _isRunning = 0;
         public string DataPath { get; private set; }
         private readonly ConcurrentDictionary<string, GroupPool> _groupPoolDict;
 
@@ -40,20 +41,21 @@ namespace Spool
         /// </summary>
         public void Start()
         {
-            if (_isRunning)
+            if (_isRunning == 1)
             {
                 _logger.LogInformation("FilePool '{0}' is in running ,don't run it again!", Id);
                 return;
             }
             Initialize();
-            _isRunning = true;
+
+            Interlocked.Exchange(ref _isRunning, 1);
         }
 
         /// <summary>Shutdown the filePool
         /// </summary>
         public void Shutdown()
         {
-            _isRunning = false;
+            Interlocked.Exchange(ref _isRunning, 0);
         }
 
         /// <summary>Initialize
