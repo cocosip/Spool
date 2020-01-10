@@ -16,5 +16,9 @@ namespace Spool.Group
         /// <summary>Get train index from name
         /// </summary>
         int GetTrainIndex(string name);
+
+        /// <summary>Create train by group
+        /// </summary>
+        Train CreateTrain(GroupPoolDescriptor descriptor, int index);
     }
 }

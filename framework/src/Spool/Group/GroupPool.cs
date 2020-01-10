@@ -83,6 +83,7 @@ namespace Spool.Group
 
             _trains = _trainManager.FindTrains();
 
+
         }
 
         /// <summary>Start

@@ -1,16 +1,26 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Spool.Group;
 using Spool.Utility;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Xunit;
 
 namespace Spool.Tests.Group
 {
     public class TrainManagerTest
     {
+        private readonly IServiceProvider _provider;
+
+        public TrainManagerTest()
+        {
+            IServiceCollection services = new ServiceCollection();
+            services
+                .AddLogging()
+                .AddSpool();
+            _provider = services.BuildServiceProvider();
+        }
+
         [Theory]
         [InlineData("_00000001_", 1)]
         [InlineData("_x0002", 0)]
@@ -23,7 +33,7 @@ namespace Spool.Tests.Group
                 GroupPath = @"D\\Group1"
             };
 
-            ITrainManager trainManager = new TrainManager(LoggerHelper.GetLogger<TrainManager>(), descriptor);
+            ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
 
             Assert.Equal(expected, trainManager.GetTrainIndex(name));
         }
@@ -42,7 +52,7 @@ namespace Spool.Tests.Group
                 GroupPath = @"D:\\Group1"
             };
 
-            ITrainManager trainManager = new TrainManager(LoggerHelper.GetLogger<TrainManager>(), descriptor);
+            ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
 
             Assert.Equal(expected, trainManager.IsTrainName(name));
         }
@@ -57,7 +67,7 @@ namespace Spool.Tests.Group
             };
 
             DirectoryHelper.CreateIfNotExists(descriptor.GroupPath);
-            ITrainManager trainManager = new TrainManager(LoggerHelper.GetLogger<TrainManager>(), descriptor);
+            ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
 
             var train1Path = Path.Combine(descriptor.GroupPath, "_000001_");
             var train2Path = Path.Combine(descriptor.GroupPath, "_000002_");

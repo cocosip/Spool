@@ -37,7 +37,7 @@ namespace Spool
         }
 
 
-        /// <summary>Start the filePool
+        /// <summary>Start the filePool 
         /// </summary>
         public void Start()
         {

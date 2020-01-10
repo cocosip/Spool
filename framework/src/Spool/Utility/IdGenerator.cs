@@ -14,5 +14,10 @@
             return _snowflakeDistributeId.NextId();
         }
 
+        public string GenerateIdAsString()
+        {
+            return _snowflakeDistributeId.NextId().ToString();
+        }
+
     }
 }

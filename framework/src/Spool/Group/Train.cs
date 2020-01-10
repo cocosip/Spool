@@ -1,33 +1,56 @@
-﻿namespace Spool.Group
+﻿using Microsoft.Extensions.Logging;
+using System.IO;
+using System.Collections.Concurrent;
+using Spool.Utility;
+
+namespace Spool.Group
 {
     /// <summary>Sequence train
     /// </summary>
     public class Train
     {
-        public GroupPoolDescriptor Descriptor { get; set; }
 
-        /// <summary>Index
-        /// </summary>
-        public int Index { get; set; }
+        public int Index { get { return _index; } }
+        public string Name { get; }
+        public string TrainPath { get; }
 
-        /// <summary>Name, format index. exp: _000001_, _000002_
-        /// </summary>
-        public string Name { get { return $"_{Index.ToString().PadLeft(6, '0')}_"; } }
+        private readonly ConcurrentQueue<SpoolFile> _fileQueue;
 
-        /// <summary>Ctor
-        /// </summary>
-        public Train()
+        private readonly ILogger _logger;
+        private readonly IdGenerator _idGenerator;
+        private readonly SpoolOption _option;
+        private readonly GroupPoolDescriptor _descriptor;
+        private readonly int _index;
+
+
+        public Train(ILogger<Train> logger, IdGenerator idGenerator, SpoolOption option, GroupPoolDescriptor descriptor, int index)
         {
+            _logger = logger;
+            _idGenerator = idGenerator;
+            _option = option;
+            _descriptor = descriptor;
+            _index = index;
 
+            Name = CreateTrainName(_index);
+            TrainPath = Path.Combine(descriptor.GroupPath, Name);
+
+            _fileQueue = new ConcurrentQueue<SpoolFile>();
         }
 
-        /// <summary>Ctor
-        /// </summary>
-        public Train(int index, GroupPoolDescriptor descriptor)
+
+        public void Initialize()
         {
-            Index = index;
-            Descriptor = descriptor;
+            if (DirectoryHelper.CreateIfNotExists(TrainPath))
+            {
+                _logger.LogInformation("Train create TrainPath '{0}'.", TrainPath);
+            }
         }
+
+        private string CreateTrainName(int index)
+        {
+            return $"_{index.ToString().PadLeft(6, '0')}_";
+        }
+
 
 
     }

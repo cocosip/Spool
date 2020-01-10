@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -7,13 +9,15 @@ namespace Spool.Group
 {
     public class TrainManager : ITrainManager
     {
+        private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
         private readonly GroupPoolDescriptor _descriptor;
 
         /// <summary>Ctor
         /// </summary>
-        public TrainManager(ILogger<TrainManager> logger, GroupPoolDescriptor descriptor)
+        public TrainManager(IServiceProvider provider, ILogger<TrainManager> logger, GroupPoolDescriptor descriptor)
         {
+            _provider = provider;
             _logger = logger;
             _descriptor = descriptor;
         }
@@ -29,11 +33,8 @@ namespace Spool.Group
             {
                 if (IsTrainName(trainDirectoryInfo.Name))
                 {
-                    trains.Add(new Train()
-                    {
-                        Index = GetTrainIndex(trainDirectoryInfo.Name),
-                        Descriptor = _descriptor
-                    });
+                    var train = CreateTrain(_descriptor, GetTrainIndex(trainDirectoryInfo.Name));
+                    trains.Add(train);
                 }
             }
             return trains;
@@ -57,6 +58,14 @@ namespace Spool.Group
                 return r;
             }
             return 0;
+        }
+
+        /// <summary>Create train by group
+        /// </summary>
+        public Train CreateTrain(GroupPoolDescriptor descriptor, int index)
+        {
+            var train = (Train)ActivatorUtilities.CreateInstance(_provider, typeof(Train), descriptor, index);
+            return train;
         }
 
 
