@@ -1,57 +1,42 @@
-﻿using Microsoft.Extensions.Logging;
-using System.IO;
-using System.Collections.Concurrent;
-using Spool.Utility;
-
-namespace Spool.Group
+﻿namespace Spool.Group
 {
     /// <summary>Sequence train
     /// </summary>
     public class Train
     {
+        /// <summary>Index
+        /// </summary>
+        public int Index { get; private set; }
 
-        public int Index { get { return _index; } }
-        public string Name { get; }
-        public string TrainPath { get; }
+        /// <summary>Name
+        /// </summary>
+        public string Name { get; private set; }
 
-        private readonly ConcurrentQueue<SpoolFile> _fileQueue;
+        /// <summary>Descriptor
+        /// </summary>
+        public SpoolGroupDescriptor Descriptor { get; private set; }
 
-        private readonly ILogger _logger;
-        private readonly IdGenerator _idGenerator;
-        private readonly SpoolOption _option;
-        private readonly SpoolGroupDescriptor _descriptor;
-        private readonly int _index;
+        /// <summary>Path
+        /// </summary>
+        public string Path { get; private set; }
 
-
-        public Train(ILogger<Train> logger, IdGenerator idGenerator, SpoolOption option, SpoolGroupDescriptor descriptor, int index)
+        public Train(int index, SpoolGroupDescriptor descriptor)
         {
-            _logger = logger;
-            _idGenerator = idGenerator;
-            _option = option;
-            _descriptor = descriptor;
-            _index = index;
-
-            Name = CreateTrainName(_index);
-            TrainPath = Path.Combine(descriptor.Path, Name);
-
-            _fileQueue = new ConcurrentQueue<SpoolFile>();
+            Index = index;
+            Descriptor = descriptor;
+            Name = FormatName(index);
+            Path = GetPath(descriptor, Name);
         }
 
-
-        public void Initialize()
-        {
-            if (DirectoryHelper.CreateIfNotExists(TrainPath))
-            {
-                _logger.LogInformation("Train create TrainPath '{0}'.", TrainPath);
-            }
-        }
-
-        private string CreateTrainName(int index)
+        private string FormatName(int index)
         {
             return $"_{index.ToString().PadLeft(6, '0')}_";
         }
 
-
+        private string GetPath(SpoolGroupDescriptor descriptor, string name)
+        {
+            return System.IO.Path.Combine(descriptor.Path, name);
+        }
 
     }
 }

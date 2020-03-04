@@ -4,9 +4,9 @@
     /// </summary>
     public class SpoolFile
     {
-        /// <summary>UniqueId
+        /// <summary>所属分组
         /// </summary>
-        public long Id { get; set; }
+        public string GroupName { get; set; }
 
         /// <summary>FileName
         /// </summary>

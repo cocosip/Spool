@@ -58,31 +58,46 @@ namespace Spool.Tests.Group
         }
 
         [Fact]
-        public void FindTrains_Test()
+        public void Train_Test()
         {
-            var descriptor = new SpoolGroupDescriptor()
+            var train = new Train(1, new SpoolGroupDescriptor()
             {
-                Name = "Group1",
-                Path = Path.Combine(AppContext.BaseDirectory, "Group1")
-            };
+                Name="Group1",
+                Path="D:\\Default"
+            });
 
-            DirectoryHelper.CreateIfNotExists(descriptor.Path);
-            ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
+            Assert.Equal(1, train.Index);
+            Assert.Equal("_000001_", train.Name);
+            Assert.Equal("D:\\Default\\_000001_", train.Path);
 
-            var train1Path = Path.Combine(descriptor.Path, "_000001_");
-            var train2Path = Path.Combine(descriptor.Path, "_000002_");
-
-            DirectoryHelper.CreateIfNotExists(train1Path);
-            DirectoryHelper.CreateIfNotExists(train2Path);
-
-            var trains = trainManager.FindTrains();
-            Assert.Equal(2, trains.Count);
-
-            if (Directory.Exists(descriptor.Path))
-            {
-                Directory.Delete(descriptor.Path, true);
-            }
         }
+
+        //[Fact]
+        //public void FindTrains_Test()
+        //{
+        //    var descriptor = new SpoolGroupDescriptor()
+        //    {
+        //        Name = "Group1",
+        //        Path = Path.Combine(AppContext.BaseDirectory, "Group1")
+        //    };
+
+        //    DirectoryHelper.CreateIfNotExists(descriptor.Path);
+        //    ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
+
+        //    var train1Path = Path.Combine(descriptor.Path, "_000001_");
+        //    var train2Path = Path.Combine(descriptor.Path, "_000002_");
+
+        //    DirectoryHelper.CreateIfNotExists(train1Path);
+        //    DirectoryHelper.CreateIfNotExists(train2Path);
+
+        //    var trains = trainManager.FindTrains();
+        //    Assert.Equal(2, trains.Count);
+
+        //    if (Directory.Exists(descriptor.Path))
+        //    {
+        //        Directory.Delete(descriptor.Path, true);
+        //    }
+        //}
 
 
     }

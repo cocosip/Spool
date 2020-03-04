@@ -14,9 +14,9 @@ namespace Spool
         /// </summary>
         public string DefaultGroup { get; set; }
 
-        /// <summary>最大序列的数量(默认5000)
+        /// <summary>最大序列的数量(默认999999)
         /// </summary>
-        public int MaxTrainCount { get; set; } = 5000;
+        public int MaxTrainCount { get; set; } = 999999;
 
         /// <summary>每个序列下最大的文件数量(默认65534)
         /// </summary>

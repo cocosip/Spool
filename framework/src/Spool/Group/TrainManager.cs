@@ -9,6 +9,8 @@ namespace Spool.Group
 {
     public class TrainManager : ITrainManager
     {
+        private List<Train> _trains;
+
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
         private readonly SpoolGroupDescriptor _descriptor;
@@ -20,24 +22,15 @@ namespace Spool.Group
             _provider = provider;
             _logger = logger;
             _descriptor = descriptor;
+
+            _trains = new List<Train>();
         }
 
         /// <summary>Find trains
         /// </summary>
         public List<Train> FindTrains()
         {
-            var trains = new List<Train>();
-            var groupDirectoryInfo = new DirectoryInfo(_descriptor.Path);
-            var trainDirectoryInfos = groupDirectoryInfo.GetDirectories();
-            foreach (var trainDirectoryInfo in trainDirectoryInfos)
-            {
-                if (IsTrainName(trainDirectoryInfo.Name))
-                {
-                    var train = CreateTrain(_descriptor, GetTrainIndex(trainDirectoryInfo.Name));
-                    trains.Add(train);
-                }
-            }
-            return trains;
+            return _trains;
         }
 
 
