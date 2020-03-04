@@ -19,11 +19,11 @@ namespace Spool.Group
         private readonly ILogger _logger;
         private readonly IdGenerator _idGenerator;
         private readonly SpoolOption _option;
-        private readonly GroupPoolDescriptor _descriptor;
+        private readonly SpoolGroupDescriptor _descriptor;
         private readonly int _index;
 
 
-        public Train(ILogger<Train> logger, IdGenerator idGenerator, SpoolOption option, GroupPoolDescriptor descriptor, int index)
+        public Train(ILogger<Train> logger, IdGenerator idGenerator, SpoolOption option, SpoolGroupDescriptor descriptor, int index)
         {
             _logger = logger;
             _idGenerator = idGenerator;
@@ -32,7 +32,7 @@ namespace Spool.Group
             _index = index;
 
             Name = CreateTrainName(_index);
-            TrainPath = Path.Combine(descriptor.GroupPath, Name);
+            TrainPath = Path.Combine(descriptor.Path, Name);
 
             _fileQueue = new ConcurrentQueue<SpoolFile>();
         }

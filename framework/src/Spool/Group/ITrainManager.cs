@@ -19,6 +19,6 @@ namespace Spool.Group
 
         /// <summary>Create train by group
         /// </summary>
-        Train CreateTrain(GroupPoolDescriptor descriptor, int index);
+        Train CreateTrain(SpoolGroupDescriptor descriptor, int index);
     }
 }

@@ -8,8 +8,5 @@
     <PackageLicense>https://github.com/cocosip/Spool/blob/master/LICENSE</PackageLicense>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/cocosip/Spool</RepositoryUrl>
-    <Description>FilePool Store</Description>
-    <PackageTags>Spool,FilePool</PackageTags>
   </PropertyGroup>
-
 </Project>

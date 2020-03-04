@@ -4,7 +4,6 @@ using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Threading;
 
 namespace Spool
@@ -74,39 +73,17 @@ namespace Spool
                 _logger.LogInformation("FilePool '{0}', create fle pool data directory '{1}'.", Id, DataPath);
             }
 
-            if (DirectoryHelper.CreateIfNotExists(_option.WatcherPath))
-            {
-                _logger.LogInformation("FilePool '{1}', create watcher directory '{1}'.", Id, _option.WatcherPath);
-            }
-
-            //GroupPool
-            var groupPoolDescriptors = _groupPoolManager.FindGroupPools();
-            if (!groupPoolDescriptors.Any())
-            {
-                groupPoolDescriptors.Add(new GroupPoolDescriptor()
-                {
-                    GroupName = _option.DefaultGroup,
-                    GroupPath = GenerateGroupPath(_option.DefaultGroup)
-                });
-            }
-
-            foreach (var groupPoolDescriptor in groupPoolDescriptors)
+            foreach (var groupPoolDescriptor in _option.Groups)
             {
                 var groupPool = _groupPoolManager.CreateGroupPool(groupPoolDescriptor);
                 groupPool.Initialize();
                 if (!_groupPoolDict.TryAdd(groupPool.GroupName, groupPool))
                 {
-                    _logger.LogError("Add 'GroupPool' to dict fail ! GroupName is '{0}'", groupPoolDescriptor.GroupName);
+                    _logger.LogError("Add 'GroupPool' to dict fail ! GroupName is '{0}'", groupPoolDescriptor.Name);
                 }
             }
 
         }
-
-        private string GenerateGroupPath(string groupName)
-        {
-            return Path.Combine(_option.RootPath, groupName);
-        }
-
 
     }
 }

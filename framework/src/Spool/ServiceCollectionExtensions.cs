@@ -26,7 +26,7 @@ namespace Spool
                 .AddSingleton<SpoolOption>(option)
                 .AddSingleton<FilePool>()
                 .AddTransient<IGroupPoolManager, GroupPoolManager>()
-                .AddScoped<GroupPoolDescriptor>()
+                .AddScoped<SpoolGroupDescriptor>()
                 .AddScoped<ITrainManager, TrainManager>()
                 .AddScoped<FileWriterOption>()
                 .AddScoped<IFileWriterManager, FileWriterManager>()

@@ -11,11 +11,11 @@ namespace Spool.Group
     {
         private readonly IServiceProvider _provider;
         private readonly ILogger _logger;
-        private readonly GroupPoolDescriptor _descriptor;
+        private readonly SpoolGroupDescriptor _descriptor;
 
         /// <summary>Ctor
         /// </summary>
-        public TrainManager(IServiceProvider provider, ILogger<TrainManager> logger, GroupPoolDescriptor descriptor)
+        public TrainManager(IServiceProvider provider, ILogger<TrainManager> logger, SpoolGroupDescriptor descriptor)
         {
             _provider = provider;
             _logger = logger;
@@ -27,7 +27,7 @@ namespace Spool.Group
         public List<Train> FindTrains()
         {
             var trains = new List<Train>();
-            var groupDirectoryInfo = new DirectoryInfo(_descriptor.GroupPath);
+            var groupDirectoryInfo = new DirectoryInfo(_descriptor.Path);
             var trainDirectoryInfos = groupDirectoryInfo.GetDirectories();
             foreach (var trainDirectoryInfo in trainDirectoryInfos)
             {
@@ -62,7 +62,7 @@ namespace Spool.Group
 
         /// <summary>Create train by group
         /// </summary>
-        public Train CreateTrain(GroupPoolDescriptor descriptor, int index)
+        public Train CreateTrain(SpoolGroupDescriptor descriptor, int index)
         {
             var train = (Train)ActivatorUtilities.CreateInstance(_provider, typeof(Train), descriptor, index);
             return train;

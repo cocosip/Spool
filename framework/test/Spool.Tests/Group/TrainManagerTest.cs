@@ -27,10 +27,10 @@ namespace Spool.Tests.Group
         [InlineData("_6003_", 6003)]
         public void GetTrainIndex_Test(string name, int? expected)
         {
-            var descriptor = new GroupPoolDescriptor()
+            var descriptor = new SpoolGroupDescriptor()
             {
-                GroupName = "Group1",
-                GroupPath = @"D\\Group1"
+                Name = "Group1",
+                Path = @"D\\Group1"
             };
 
             ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
@@ -46,10 +46,10 @@ namespace Spool.Tests.Group
         [InlineData("_x3_", false)]
         public void IsTrainName_Test(string name, bool expected)
         {
-            var descriptor = new GroupPoolDescriptor()
+            var descriptor = new SpoolGroupDescriptor()
             {
-                GroupName = "Group1",
-                GroupPath = @"D:\\Group1"
+                Name = "Group1",
+                Path = @"D:\\Group1"
             };
 
             ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
@@ -60,17 +60,17 @@ namespace Spool.Tests.Group
         [Fact]
         public void FindTrains_Test()
         {
-            var descriptor = new GroupPoolDescriptor()
+            var descriptor = new SpoolGroupDescriptor()
             {
-                GroupName = "Group1",
-                GroupPath = Path.Combine(AppContext.BaseDirectory, "Group1")
+                Name = "Group1",
+                Path = Path.Combine(AppContext.BaseDirectory, "Group1")
             };
 
-            DirectoryHelper.CreateIfNotExists(descriptor.GroupPath);
+            DirectoryHelper.CreateIfNotExists(descriptor.Path);
             ITrainManager trainManager = new TrainManager(_provider, _provider.GetService<ILogger<TrainManager>>(), descriptor);
 
-            var train1Path = Path.Combine(descriptor.GroupPath, "_000001_");
-            var train2Path = Path.Combine(descriptor.GroupPath, "_000002_");
+            var train1Path = Path.Combine(descriptor.Path, "_000001_");
+            var train2Path = Path.Combine(descriptor.Path, "_000002_");
 
             DirectoryHelper.CreateIfNotExists(train1Path);
             DirectoryHelper.CreateIfNotExists(train2Path);
@@ -78,9 +78,9 @@ namespace Spool.Tests.Group
             var trains = trainManager.FindTrains();
             Assert.Equal(2, trains.Count);
 
-            if (Directory.Exists(descriptor.GroupPath))
+            if (Directory.Exists(descriptor.Path))
             {
-                Directory.Delete(descriptor.GroupPath, true);
+                Directory.Delete(descriptor.Path, true);
             }
         }
 

@@ -2,8 +2,6 @@
 using Spool.Dependency;
 using Spool.Utility;
 using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace Spool.Group
 {
@@ -20,39 +18,16 @@ namespace Spool.Group
             _option = option;
         }
 
-        /// <summary>Find GroupPoolDescriptors from spool folder
-        /// </summary>
-        public List<GroupPoolDescriptor> FindGroupPools()
-        {
-            var groupPoolDescriptors = new List<GroupPoolDescriptor>();
-            var spoolDirectoryInfo = new DirectoryInfo(_option.RootPath);
-            var directoryInfos = spoolDirectoryInfo.GetDirectories();
-            foreach (var directoryInfo in directoryInfos)
-            {
-                if (directoryInfo.Name != Consts.FILEPOOL_DATA_NAME)
-                {
-                    var groupPoolDescriptor = new GroupPoolDescriptor()
-                    {
-                        GroupName = directoryInfo.Name,
-                        GroupPath = directoryInfo.FullName
-                    };
-                    groupPoolDescriptors.Add(groupPoolDescriptor);
-                }
-            }
-            _logger.LogInformation("Find GroupPoolDescriptors from spool folder,{0}", string.Join(",", groupPoolDescriptors));
-
-            return groupPoolDescriptors;
-        }
 
         /// <summary>Create group pool by 'GroupPoolDescriptor'
         /// </summary>
         /// <param name="descriptor"></param>
         /// <returns></returns>
-        public GroupPool CreateGroupPool(GroupPoolDescriptor descriptor)
+        public GroupPool CreateGroupPool(SpoolGroupDescriptor descriptor)
         {
-            if (DirectoryHelper.CreateIfNotExists(descriptor.GroupPath))
+            if (DirectoryHelper.CreateIfNotExists(descriptor.Path))
             {
-                _logger.LogInformation("Create groupPool directory,groupName '{0}',directory '{1}'", descriptor.GroupName, descriptor.GroupPath);
+                _logger.LogInformation("Create groupPool directory,groupName '{0}',directory '{1}'", descriptor.Name, descriptor.Path);
             }
             var groupPool = _provider.CreateInstance<GroupPool>(descriptor);
             return groupPool;
