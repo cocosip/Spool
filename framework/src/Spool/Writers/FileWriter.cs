@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Spool.Writer
+namespace Spool.Writers
 {
-    /// <summary>Write source file to spool,source file can be a path,or a file stream
+    /// <summary>文件写入器
     /// </summary>
     public class FileWriter
     {
@@ -13,32 +12,16 @@ namespace Spool.Writer
         private readonly ILogger _logger;
         private readonly FileWriterOption _option;
 
-        /// <summary>Ctor
-        /// </summary>
         public FileWriter(ILogger<FileWriter> logger, FileWriterOption option)
         {
             _logger = logger;
             _option = option;
-            Id = Guid.NewGuid().ToString("N");
         }
 
-        /// <summary>Write source path to target path
+        /// <summary>写入文件
         /// </summary>
-        /// <param name="sourcePath">Source path</param>
-        /// <param name="targetPath">Target path</param>
-        /// <returns></returns>
-        public Task WriteFileAsync(string sourcePath, string targetPath)
-        {
-            using (var stream = File.OpenRead(sourcePath))
-            {
-                return WriteFileInternal(stream, targetPath);
-            }
-        }
-
-        /// <summary>Write stream to target path
-        /// </summary>
-        /// <param name="stream">Source stream</param>
-        /// <param name="targetPath">Target path</param>
+        /// <param name="stream">数据流</param>
+        /// <param name="targetPath">存储路径</param>
         /// <returns></returns>
         public Task WriteFileAsync(Stream stream, string targetPath)
         {
@@ -52,7 +35,7 @@ namespace Spool.Writer
                 using (FileStream fw = File.OpenWrite(targetPath))
                 {
                     //设置缓冲区大小
-                    byte[] buffers = new byte[_option.FileWriteSliceSize];
+                    byte[] buffers = new byte[_option.WriteBufferSize];
                     //读取一次
                     int r = stream.Read(buffers, 0, buffers.Length);
                     //判断本次是否读取到了数据
@@ -63,13 +46,5 @@ namespace Spool.Writer
                 }
             });
         }
-
-
-        public override string ToString()
-        {
-            return $"FileWriter, [Id:{Id}]";
-        }
-
-
     }
 }

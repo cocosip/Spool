@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Spool.Group
+namespace Spool
 {
-    /// <summary>Load 
+    /// <summary>文件写入工厂
     /// </summary>
-    public interface ISpoolFileLoader
+    public interface IFileWriterFactory
     {
     }
 }

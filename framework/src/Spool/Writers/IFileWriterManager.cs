@@ -1,12 +1,13 @@
-﻿namespace Spool.Writer
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Spool.Writers
 {
+    /// <summary>文件写入管理器
+    /// </summary>
     public interface IFileWriterManager
     {
-        void Initialize();
-
-        /// <summary>Get option
-        /// </summary>
-        FileWriterOption GetFileWriterOption();
 
         /// <summary>Get a file writer
         /// </summary>
@@ -14,6 +15,6 @@
 
         /// <summary>Return a file writer
         /// </summary>
-        void Return(FileWriter fileWriter);
+        public void Return(FileWriter fileWriter);
     }
 }

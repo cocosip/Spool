@@ -4,9 +4,7 @@ using System.Text;
 
 namespace Spool
 {
-    /// <summary>文件池
-    /// </summary>
-    public class FilePool
+    public class FileWriterFactory : IFileWriterFactory
     {
 
     }

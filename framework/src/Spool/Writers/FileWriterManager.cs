@@ -1,27 +1,28 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Spool.Writer
+namespace Spool.Writers
 {
+    /// <summary>文件写入管理器
+    /// </summary>
     public class FileWriterManager : IFileWriterManager
     {
         private readonly ConcurrentStack<FileWriter> _fileWriterStack;
 
         private readonly AutoResetEvent _autoResetEvent;
-        private readonly IServiceProvider _provider;
+        private readonly ISpoolApplication _spoolApplication;
         private readonly ILogger _logger;
         private readonly FileWriterOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriterManager(IServiceProvider provider, ILogger<FileWriterManager> logger, FileWriterOption option)
+        public FileWriterManager(ILogger<FileWriterManager> logger, ISpoolApplication spoolApplication, FilePoolOption option)
         {
-            _provider = provider;
             _logger = logger;
-            _option = option;
+            _spoolApplication = spoolApplication;
+            //_option = option;
 
             _fileWriterStack = new ConcurrentStack<FileWriter>();
             _autoResetEvent = new AutoResetEvent(false);
@@ -31,7 +32,10 @@ namespace Spool.Writer
         {
             for (int i = 0; i < _option.MaxFileWriterCount; i++)
             {
-                var fileWriter = _provider.GetService<FileWriter>();
+
+                //var option
+
+                var fileWriter = _spoolApplication.Provider.GetService<FileWriter>();
                 _fileWriterStack.Push(fileWriter);
             }
         }
@@ -49,7 +53,7 @@ namespace Spool.Writer
         {
             if (!_fileWriterStack.TryPop(out FileWriter fileWriter))
             {
-                _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.GroupName);
+                _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.Group.Name);
                 _autoResetEvent.WaitOne();
             }
             _logger.LogDebug("Get fileWriter from queue,{0}", fileWriter);

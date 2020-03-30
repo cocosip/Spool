@@ -1,23 +1,26 @@
 ﻿namespace Spool
 {
-    /// <summary>Spool write file
+    /// <summary>文件信息
     /// </summary>
     public class SpoolFile
     {
-        /// <summary>所属分组
+        /// <summary>组名
         /// </summary>
         public string GroupName { get; set; }
 
-        /// <summary>FileName
+        /// <summary>序列的索引
         /// </summary>
-        public string FileName { get; set; }
+        public int TrainIndex { get; set; }
 
-        /// <summary>File extension
-        /// </summary>
-        public string Ext { get; set; }
-
-        /// <summary>File save full path
+        /// <summary>文件路径
         /// </summary>
         public string Path { get; set; }
+
+        /// <summary>文件信息
+        /// </summary>
+        public override string ToString()
+        {
+            return $"[Group:{GroupName},Index:{TrainIndex},Path:{Path}]";
+        }
     }
 }
