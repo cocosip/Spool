@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Spool.Utility;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Spool.Trains
 {
@@ -58,6 +59,29 @@ namespace Spool.Trains
                 _logger.LogDebug("创建文件池:'{0}'下面的序列,序列号为:'{1}',", option.Name, index);
                 return train;
             }
+        }
+
+        /// <summary>获取序列索引最新的序列
+        /// </summary>
+        public Train GetLatest(IEnumerable<Train> trains)
+        {
+            return trains.OrderBy(x => x.Index).LastOrDefault();
+        }
+
+        /// <summary>根据序列信息,文件池配置信息获取序列基本信息
+        /// </summary>
+        public TrainInfo BuildInfo(Train train, FilePoolOption option)
+        {
+            var info = new TrainInfo()
+            {
+                FilePoolName = option.Name,
+                FilePoolPath = option.Path,
+                Index = train.Index,
+                Name = train.Name,
+                Path = train.Path,
+                TrainType = train.TrainType
+            };
+            return info;
         }
 
 

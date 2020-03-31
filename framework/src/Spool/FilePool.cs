@@ -1,13 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Spool.Dependency;
+﻿using Microsoft.Extensions.Logging;
 using Spool.Trains;
 using Spool.Utility;
 using Spool.Writers;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -55,7 +53,6 @@ namespace Spool
             }
             //序列启动
 
-
             IsRunning = true;
         }
 
@@ -73,16 +70,6 @@ namespace Spool
         }
 
 
-
-        ///// <summary>创建序列
-        ///// </summary>
-        //private Train CreateTrain(int index)
-        //{
-        //    _logger.LogDebug("创建序列,组信息:{0}", _option.Name);
-        //    return _spoolApplication.Provider.CreateInstance<Train>(_fileWriterManager, _group, index);
-        //}
-
-
         /// <summary>写文件
         /// </summary>
         /// <param name="stream">文件流</param>
@@ -90,7 +77,8 @@ namespace Spool
         /// <returns></returns>
         public async Task<SpoolFile> WriteFile(Stream stream, string fileExt)
         {
-            return default;
+            var train = GetWriteTrain();
+            return await train.WriteFile(stream, fileExt);
         }
 
         /// <summary>获取指定数量的文件
@@ -99,7 +87,8 @@ namespace Spool
         /// <returns></returns>
         public List<SpoolFile> GetFiles(int count = 1)
         {
-            return default;
+            var train = GetReadTrain();
+            return train.GetFiles(count);
         }
 
         /// <summary>归还数据
@@ -107,14 +96,16 @@ namespace Spool
         /// <param name="spoolFiles">文件列表</param>
         public void ReturnFiles(List<SpoolFile> spoolFiles)
         {
-
+            var train = GetReadTrain();
+            train.ReturnFiles(spoolFiles);
         }
 
         /// <summary>释放文件
         /// </summary>
         public void ReleaseFiles(List<SpoolFile> spoolFiles)
         {
-
+            var train = GetReadTrain();
+            train.ReleaseFiles(spoolFiles);
         }
 
         /// <summary>初始化
@@ -128,8 +119,39 @@ namespace Spool
             }
             //加载序列
             var trains = _trainFactory.GetTrainsFromPath(Option);
+            //如果当前目录下不存在任何的序列文件夹,则说明没有序列
+            if (!trains.Any())
+            {
+                //创建一个新的序列(创建第一个序列)
+                var train = _trainFactory.CreateTrain(Option, 1);
+                trains.Add(train);
+            }
 
+            //最新的序列
+            var latestTrain = _trainFactory.GetLatest(trains);
+            //最新序列变成写,不可读
+            latestTrain.ChangeType(TrainType.Write);
 
+            //初始化全部序列
+            foreach (var train in trains)
+            {
+                //train.Initialize();
+            }
         }
+
+        /// <summary>获取可写的序列
+        /// </summary>
+        private Train GetWriteTrain()
+        {
+            return default;
+        }
+
+        /// <summary>获取可读的序列
+        /// </summary>
+        private Train GetReadTrain()
+        {
+            return default;
+        }
+
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SystemPath = System.IO.Path;
 
 namespace Spool.Trains
 {
@@ -24,7 +25,11 @@ namespace Spool.Trains
 
         /// <summary>序列的路径
         /// </summary>
-        public string TrainPath { get; private set; }
+        public string Path { get; private set; }
+
+        /// <summary>序列类型
+        /// </summary>
+        public TrainType TrainType { get; set; }
 
         /// <summary>是否正在删除
         /// </summary>
@@ -41,74 +46,35 @@ namespace Spool.Trains
 
         /// <summary>序列删除事件
         /// </summary>
-        public event EventHandler<TrainDeleteEventArg> OnDelete;
+        public event EventHandler<TrainDeleteEventArgs> OnDelete;
 
+        /// <summary>序列类型转换事件
+        /// </summary>
+        public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
 
         private readonly ILogger _logger;
         private readonly FilePoolOption _option;
         private readonly IdGenerator _idGenerator;
         private readonly IFileWriterManager _fileWriterManager;
+        private readonly ITrainFactory _trainFactory;
 
-        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, TrainOption trainOption)
+        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, ITrainFactory trainFactory, TrainOption trainOption)
         {
             _logger = logger;
             _option = option;
             _idGenerator = idGenerator;
             _fileWriterManager = fileWriterManager;
-
+            _trainFactory = trainFactory;
 
             Index = trainOption.Index;
             Name = TrainUtil.GenerateTrainName(Index);
-            TrainPath = TrainUtil.GenerateTrainPath(_option.Path, Name);
+            Path = TrainUtil.GenerateTrainPath(_option.Path, Name);
+            TrainType = TrainType.Default;
             _pendingQueue = new ConcurrentQueue<SpoolFile>();
             _progressingDict = new ConcurrentDictionary<string, SpoolFile>();
         }
 
-        /// <summary>序列信息
-        /// </summary>
-        public string Info()
-        {
-            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{TrainPath}]";
-        }
 
-
-        /// <summary>能否释放
-        /// </summary>
-        public bool IsEmpty()
-        {
-            return _pendingQueue.IsEmpty;
-        }
-
-        /// <summary>能否删除
-        /// </summary>
-        public bool CanDelete()
-        {
-            return IsEmpty() && _progressingDict.Count == 0;
-        }
-
-        /// <summary>尝试删除当前序列
-        /// </summary>
-        public void MakeAsDelete()
-        {
-            _isDeleting = true;
-        }
-
-        /// <summary>真实的删除
-        /// </summary>
-        private void RealDelete()
-        {
-            if (_isDeleting && CanDelete())
-            {
-                //删除
-                var arg = new TrainDeleteEventArg()
-                {
-                    GroupName = _option.Name,
-                    GroupPath = _option.Path,
-                    Index = Index
-                };
-                OnDelete?.Invoke(this, arg);
-            }
-        }
 
 
         /// <summary>写文件
@@ -229,13 +195,91 @@ namespace Spool.Trains
             }
         }
 
+        /// <summary>序列信息
+        /// </summary>
+        public string Info()
+        {
+            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{Path}]";
+        }
+
+        /// <summary>初始化
+        /// </summary>
+        public void Initialize(TrainType trainType)
+        {
+            //创建序列文件夹
+            if (DirectoryHelper.CreateIfNotExists(Path))
+            {
+                _logger.LogDebug("创建序列文件夹,文件池名:'{0}',文件池路径:'{1}',当前序列索引:'{2}',序列路径:'{3}'.", _option.Name, _option.Path, Index, Path);
+            }
+
+            //判断序列的类型,只读
+        }
+
+
+        /// <summary>能否释放
+        /// </summary>
+        public bool IsEmpty()
+        {
+            return _pendingQueue.IsEmpty;
+        }
+
+        /// <summary>能否删除
+        /// </summary>
+        public bool CanDelete()
+        {
+            return IsEmpty() && _progressingDict.Count == 0;
+        }
+
+        /// <summary>尝试删除当前序列
+        /// </summary>
+        public void MakeAsDelete()
+        {
+            _isDeleting = true;
+        }
+
+        /// <summary>序列类型转换
+        /// </summary>
+        public void ChangeType(TrainType type)
+        {
+            //需要做一些事情
+            if (OnTypeChange != null)
+            {
+                var sourceType = this.TrainType;
+                this.TrainType = type;
+
+                var info = _trainFactory.BuildInfo(this, _option);
+                var args = new TrainTypeChangeEventArgs()
+                {
+                    SourceType = sourceType,
+                    Info = info,
+                };
+                OnTypeChange.Invoke(this, args);
+            }
+        }
+
+        /// <summary>真实的删除
+        /// </summary>
+        private void RealDelete()
+        {
+            if (_isDeleting && CanDelete())
+            {
+                //删除
+                var info = _trainFactory.BuildInfo(this, _option);
+                var args = new TrainDeleteEventArgs()
+                {
+                    Info = info
+                };
+                OnDelete?.Invoke(this, args);
+            }
+        }
+
         /// <summary>根据文件扩展名生成存储路径
         /// </summary>
         private string GenerateFilePath(string fileExt)
         {
             //组/索引/
             var fileId = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
-            var path = Path.Combine(_option.Path, $"{Name}", fileId);
+            var path = SystemPath.Combine(_option.Path, $"{Name}", fileId);
             return path;
         }
 
