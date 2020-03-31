@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Spool
+namespace Spool.Trains
 {
     /// <summary>序列删除事件
     /// </summary>
@@ -8,10 +8,15 @@ namespace Spool
     {
         /// <summary>组信息
         /// </summary>
-        public GroupDescriptor Group { get; set; }
+        public string GroupName { get; set; }
+
+        /// <summary>组路径
+        /// </summary>
+        public string GroupPath { get; set; }
 
         /// <summary>序列的索引
         /// </summary>
         public int Index { get; set; }
+    
     }
 }

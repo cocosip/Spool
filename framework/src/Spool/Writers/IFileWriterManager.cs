@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Spool.Writers
+﻿namespace Spool.Writers
 {
     /// <summary>文件写入管理器
     /// </summary>
     public interface IFileWriterManager
     {
 
-        /// <summary>Get a file writer
+        /// <summary>获取一个文件写入器
         /// </summary>
         FileWriter Get();
 
-        /// <summary>Return a file writer
+        /// <summary>归还一个文件写入器
         /// </summary>
-        public void Return(FileWriter fileWriter);
+        void Return(FileWriter fileWriter);
+
+
     }
 }

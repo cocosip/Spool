@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Spool.Utility
 {
@@ -14,6 +15,16 @@ namespace Spool.Utility
         public static string GenerateTrainName(int index)
         {
             return $"_{index.ToString().PadLeft(6, '0')}_";
+        }
+
+        /// <summary>根据文件池路径,序列名生成序列路径
+        /// </summary>
+        /// <param name="path">文件池路径</param>
+        /// <param name="trainName">序列名</param>
+        /// <returns></returns>
+        public static string GenerateTrainPath(string path,string trainName)
+        {
+            return Path.Combine(path, trainName);
         }
 
 

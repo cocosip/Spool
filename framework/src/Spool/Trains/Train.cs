@@ -8,16 +8,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Spool
+namespace Spool.Trains
 {
     /// <summary>序列
     /// </summary>
     public class Train
     {
-        /// <summary>分组信息
-        /// </summary>
-        public GroupDescriptor Group { get; private set; }
-
         /// <summary>序列的索引
         /// </summary>
         public int Index { get; private set; }
@@ -25,6 +21,10 @@ namespace Spool
         /// <summary>序列名称
         /// </summary>
         public string Name { get; private set; }
+
+        /// <summary>序列的路径
+        /// </summary>
+        public string TrainPath { get; private set; }
 
         /// <summary>是否正在删除
         /// </summary>
@@ -41,24 +41,34 @@ namespace Spool
 
         /// <summary>序列删除事件
         /// </summary>
-        public event EventHandler<TrainDeleteEventArg> OnTrainDelete;
+        public event EventHandler<TrainDeleteEventArg> OnDelete;
 
 
         private readonly ILogger _logger;
+        private readonly FilePoolOption _option;
         private readonly IdGenerator _idGenerator;
         private readonly IFileWriterManager _fileWriterManager;
 
-        public Train(ILogger<Train> logger, IdGenerator idGenerator, IFileWriterManager fileWriterManager, GroupDescriptor groupDescriptor, int index)
+        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, TrainOption trainOption)
         {
             _logger = logger;
+            _option = option;
             _idGenerator = idGenerator;
             _fileWriterManager = fileWriterManager;
 
-            Group = groupDescriptor;
-            Index = index;
-            Name = TrainUtil.GenerateTrainName(index);
+
+            Index = trainOption.Index;
+            Name = TrainUtil.GenerateTrainName(Index);
+            TrainPath = TrainUtil.GenerateTrainPath(_option.Path, Name);
             _pendingQueue = new ConcurrentQueue<SpoolFile>();
             _progressingDict = new ConcurrentDictionary<string, SpoolFile>();
+        }
+
+        /// <summary>序列信息
+        /// </summary>
+        public string Info()
+        {
+            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{TrainPath}]";
         }
 
 
@@ -92,10 +102,11 @@ namespace Spool
                 //删除
                 var arg = new TrainDeleteEventArg()
                 {
-                    Group = Group,
+                    GroupName = _option.Name,
+                    GroupPath = _option.Path,
                     Index = Index
                 };
-                OnTrainDelete?.Invoke(this, arg);
+                OnDelete?.Invoke(this, arg);
             }
         }
 
@@ -109,18 +120,16 @@ namespace Spool
         {
             var spoolFile = new SpoolFile()
             {
-                GroupName = Group.Name,
+                GroupName = _option.Name,
                 TrainIndex = Index
             };
             var fileWriter = _fileWriterManager.Get();
             try
             {
 
-                //组/索引/
-                var fileId = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
-                var savePath = Path.Combine(Group.Path, $"{Name}", fileId);
-                await fileWriter.WriteFileAsync(stream, savePath);
-                spoolFile.Path = savePath;
+                var path = GenerateFilePath(fileExt);
+                await fileWriter.WriteFileAsync(stream, path);
+                spoolFile.Path = path;
                 return spoolFile;
             }
             catch (Exception ex)
@@ -219,6 +228,17 @@ namespace Spool
                 RealDelete();
             }
         }
+
+        /// <summary>根据文件扩展名生成存储路径
+        /// </summary>
+        private string GenerateFilePath(string fileExt)
+        {
+            //组/索引/
+            var fileId = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
+            var path = Path.Combine(_option.Path, $"{Name}", fileId);
+            return path;
+        }
+
 
 
     }

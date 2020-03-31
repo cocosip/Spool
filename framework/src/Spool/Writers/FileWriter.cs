@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,12 +11,13 @@ namespace Spool.Writers
     {
         public string Id { get; }
         private readonly ILogger _logger;
-        private readonly FileWriterOption _option;
+        private readonly FilePoolOption _option;
 
-        public FileWriter(ILogger<FileWriter> logger, FileWriterOption option)
+        public FileWriter(ILogger<FileWriter> logger, FilePoolOption option)
         {
             _logger = logger;
             _option = option;
+            Id = Guid.NewGuid().ToString();
         }
 
         /// <summary>写入文件

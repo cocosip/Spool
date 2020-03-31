@@ -1,5 +1,6 @@
 ﻿using Spool.Utility;
 using Xunit;
+using System.Runtime.InteropServices;
 
 namespace Spool.Tests.Utility
 {
@@ -31,6 +32,21 @@ namespace Spool.Tests.Utility
         public void GenerateTrainName_Test(int index, string expected)
         {
             Assert.Equal(expected, TrainUtil.GenerateTrainName(index));
+        }
+
+        [Fact]
+        public void GenerateTrainPath_Test()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var path1 = TrainUtil.GenerateTrainPath("D:\\Test1", "_000001_");
+                Assert.Equal("D:\\Test1\\_000001_", path1);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var path1 = TrainUtil.GenerateTrainPath("/usr/local/", "_000001_");
+                Assert.Equal("/usr/local/_000001_", path1);
+            }
         }
     }
 }

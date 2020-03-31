@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Spool.Dependency;
 using System.Collections.Concurrent;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Spool.Writers
 {
@@ -9,58 +10,46 @@ namespace Spool.Writers
     /// </summary>
     public class FileWriterManager : IFileWriterManager
     {
+        private int _fileWriterCount = 0;
         private readonly ConcurrentStack<FileWriter> _fileWriterStack;
-
         private readonly AutoResetEvent _autoResetEvent;
-        private readonly ISpoolApplication _spoolApplication;
         private readonly ILogger _logger;
-        private readonly FileWriterOption _option;
+        private readonly ISpoolHost _host;
+        private readonly FilePoolOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriterManager(ILogger<FileWriterManager> logger, ISpoolApplication spoolApplication, FilePoolOption option)
+        public FileWriterManager(ILogger<FileWriterManager> logger, ISpoolHost host, FilePoolOption option)
         {
             _logger = logger;
-            _spoolApplication = spoolApplication;
-            //_option = option;
+            _host = host;
+            _option = option;
 
             _fileWriterStack = new ConcurrentStack<FileWriter>();
             _autoResetEvent = new AutoResetEvent(false);
         }
 
-        public void Initialize()
-        {
-            for (int i = 0; i < _option.MaxFileWriterCount; i++)
-            {
 
-                //var option
-
-                var fileWriter = _spoolApplication.Provider.GetService<FileWriter>();
-                _fileWriterStack.Push(fileWriter);
-            }
-        }
-
-        /// <summary>Get option
-        /// </summary>
-        public FileWriterOption GetFileWriterOption()
-        {
-            return _option;
-        }
-
-        /// <summary>Get a file writer
+        /// <summary>获取一个文件写入器
         /// </summary>
         public FileWriter Get()
         {
             if (!_fileWriterStack.TryPop(out FileWriter fileWriter))
             {
-                _logger.LogInformation("Can't find any fileWriter in fileWriterManager,current group is '{0}'", _option.Group.Name);
+                //未在集合中获取,则判断能否新建
+                if (_fileWriterCount < _option.MaxFileWriterCount)
+                {
+                    fileWriter = CreateWriter();
+                    Interlocked.Increment(ref _fileWriterCount);
+                    return fileWriter;
+                }
+                _logger.LogDebug("未能获取新的文件写入器,等待中。文件池:'{0}',路径:'{1}'.", _option.Name, _option.Path);
                 _autoResetEvent.WaitOne();
             }
-            _logger.LogDebug("Get fileWriter from queue,{0}", fileWriter);
             return fileWriter;
         }
 
-        /// <summary>Return a file writer
+        /// <summary>归还一个文件写入器
         /// </summary>
         public void Return(FileWriter fileWriter)
         {
@@ -69,6 +58,21 @@ namespace Spool.Writers
                 _fileWriterStack.Push(fileWriter);
             }
             _autoResetEvent.Set();
+        }
+
+
+        /// <summary>创建文件写入器
+        /// </summary>
+        private FileWriter CreateWriter()
+        {
+            using (var scope = _host.Provider.CreateScope())
+            {
+                var fileWriter = scope.ServiceProvider.GetService<FileWriter>();
+                var option = scope.ServiceProvider.GetService<FilePoolOption>();
+                option = _option;
+
+                return fileWriter;
+            }
         }
     }
 }
