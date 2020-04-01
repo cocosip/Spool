@@ -31,9 +31,10 @@ namespace Spool.Trains
         /// </summary>
         public TrainType TrainType { get; set; }
 
-        /// <summary>是否正在删除
+        /// <summary>是否已经初始化
         /// </summary>
-        private bool _isDeleting = false;
+        public bool Initialized { get; private set; } = false;
+
 
         /// <summary>当前序列下文件的全部索引
         /// </summary>
@@ -41,7 +42,6 @@ namespace Spool.Trains
 
         /// <summary>进行中的序列下的文件操作
         /// </summary>
-
         private readonly ConcurrentDictionary<string, SpoolFile> _progressingDict;
 
         /// <summary>序列删除事件
@@ -52,19 +52,21 @@ namespace Spool.Trains
         /// </summary>
         public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
 
+        ///// <summary>序列标记为删除后,有归还操作
+        ///// </summary>
+        //public event EventHandler<TrainDeleteReturnFilesEventArgs> OnDeleteReturn;
+
         private readonly ILogger _logger;
         private readonly FilePoolOption _option;
         private readonly IdGenerator _idGenerator;
         private readonly IFileWriterManager _fileWriterManager;
-        private readonly ITrainFactory _trainFactory;
 
-        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, ITrainFactory trainFactory, TrainOption trainOption)
+        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, TrainOption trainOption)
         {
             _logger = logger;
             _option = option;
             _idGenerator = idGenerator;
             _fileWriterManager = fileWriterManager;
-            _trainFactory = trainFactory;
 
             Index = trainOption.Index;
             Name = TrainUtil.GenerateTrainName(Index);
@@ -86,7 +88,7 @@ namespace Spool.Trains
         {
             var spoolFile = new SpoolFile()
             {
-                GroupName = _option.Name,
+                FilePoolName = _option.Name,
                 TrainIndex = Index
             };
             var fileWriter = _fileWriterManager.Get();
@@ -162,7 +164,7 @@ namespace Spool.Trains
                 }
                 else
                 {
-                    _logger.LogDebug("归还数据文件不存在,组:'{0}',序列索引:'{1}',文件路径:'{2}'.", spoolFile.GroupName, spoolFile.TrainIndex, spoolFile.Path);
+                    _logger.LogDebug("归还数据文件不存在,组:'{0}',序列索引:'{1}',文件路径:'{2}'.", spoolFile.FilePoolName, spoolFile.TrainIndex, spoolFile.Path);
                 }
             }
         }
@@ -204,17 +206,21 @@ namespace Spool.Trains
 
         /// <summary>初始化
         /// </summary>
-        public void Initialize(TrainType trainType)
+        public void Initialize()
         {
+            if (Initialized)
+            {
+                _logger.LogDebug("序列已经初始化,文件池名:'{0}',当前序列索引:'{1}'.", _option.Name, Index);
+                return;
+            }
+
             //创建序列文件夹
             if (DirectoryHelper.CreateIfNotExists(Path))
             {
                 _logger.LogDebug("创建序列文件夹,文件池名:'{0}',文件池路径:'{1}',当前序列索引:'{2}',序列路径:'{3}'.", _option.Name, _option.Path, Index, Path);
             }
-
-            //判断序列的类型,只读
+            Initialized = true;
         }
-
 
         /// <summary>能否释放
         /// </summary>
@@ -227,27 +233,22 @@ namespace Spool.Trains
         /// </summary>
         public bool CanDelete()
         {
-            return IsEmpty() && _progressingDict.Count == 0;
+            return IsEmpty() && _progressingDict.Count == 0 && TrainType == TrainType.Read;
         }
 
-        /// <summary>尝试删除当前序列
-        /// </summary>
-        public void MakeAsDelete()
-        {
-            _isDeleting = true;
-        }
+
 
         /// <summary>序列类型转换
         /// </summary>
         public void ChangeType(TrainType type)
         {
+            var sourceType = this.TrainType;
+            this.TrainType = type;
+
             //需要做一些事情
             if (OnTypeChange != null)
             {
-                var sourceType = this.TrainType;
-                this.TrainType = type;
-
-                var info = _trainFactory.BuildInfo(this, _option);
+                var info = BuildInfo();
                 var args = new TrainTypeChangeEventArgs()
                 {
                     SourceType = sourceType,
@@ -255,16 +256,22 @@ namespace Spool.Trains
                 };
                 OnTypeChange.Invoke(this, args);
             }
+
+            //如果从未操作变成读,或者写
+            if (sourceType == TrainType.Default && type != TrainType.Default)
+            {
+                LoadFiles();
+            }
         }
 
         /// <summary>真实的删除
         /// </summary>
         private void RealDelete()
         {
-            if (_isDeleting && CanDelete())
+            if (CanDelete())
             {
                 //删除
-                var info = _trainFactory.BuildInfo(this, _option);
+                var info = BuildInfo();
                 var args = new TrainDeleteEventArgs()
                 {
                     Info = info
@@ -272,6 +279,41 @@ namespace Spool.Trains
                 OnDelete?.Invoke(this, args);
             }
         }
+
+        /// <summary>家在当前序列的文件
+        /// </summary>
+        private void LoadFiles()
+        {
+            var directoryInfo = new DirectoryInfo(Path);
+            var files = directoryInfo.GetFiles();
+            foreach (var file in files)
+            {
+                var spoolFile = new SpoolFile()
+                {
+                    FilePoolName = _option.Name,
+                    TrainIndex = Index,
+                    Path = file.FullName
+                };
+                _pendingQueue.Enqueue(spoolFile);
+            }
+        }
+
+        /// <summary>根据序列信息,文件池配置信息获取序列基本信息
+        /// </summary>
+        private TrainInfo BuildInfo()
+        {
+            var info = new TrainInfo()
+            {
+                FilePoolName = _option.Name,
+                FilePoolPath = _option.Path,
+                Index = Index,
+                Name = Name,
+                Path = Path,
+                TrainType = TrainType
+            };
+            return info;
+        }
+
 
         /// <summary>根据文件扩展名生成存储路径
         /// </summary>

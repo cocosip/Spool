@@ -15,14 +15,16 @@ namespace Spool.Writers
         private readonly AutoResetEvent _autoResetEvent;
         private readonly ILogger _logger;
         private readonly ISpoolHost _host;
+        private readonly IFilePoolFactory _filePoolFactory;
         private readonly FilePoolOption _option;
 
         /// <summary>Ctor
         /// </summary>
-        public FileWriterManager(ILogger<FileWriterManager> logger, ISpoolHost host, FilePoolOption option)
+        public FileWriterManager(ILogger<FileWriterManager> logger, ISpoolHost host, IFilePoolFactory filePoolFactory, FilePoolOption option)
         {
             _logger = logger;
             _host = host;
+            _filePoolFactory = filePoolFactory;
             _option = option;
 
             _fileWriterStack = new ConcurrentStack<FileWriter>();
@@ -69,7 +71,8 @@ namespace Spool.Writers
             {
                 var fileWriter = scope.ServiceProvider.GetService<FileWriter>();
                 var option = scope.ServiceProvider.GetService<FilePoolOption>();
-                option = _option;
+                
+                _filePoolFactory.SetScopeOption(option, _option);
 
                 return fileWriter;
             }

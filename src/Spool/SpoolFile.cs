@@ -6,7 +6,7 @@
     {
         /// <summary>组名
         /// </summary>
-        public string GroupName { get; set; }
+        public string FilePoolName { get; set; }
 
         /// <summary>序列的索引
         /// </summary>
@@ -20,7 +20,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"[Group:{GroupName},Index:{TrainIndex},Path:{Path}]";
+            return $"[FilePool:{FilePoolName},Index:{TrainIndex},Path:{Path}]";
         }
     }
 }

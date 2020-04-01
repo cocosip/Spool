@@ -44,6 +44,7 @@ namespace Spool.Writers
                     while (r > 0)
                     {
                         fw.Write(buffers, 0, r);
+                        r = stream.Read(buffers, 0, buffers.Length);
                     }
                 }
             });

@@ -6,18 +6,18 @@
     {
         /// <summary>默认(未分配)
         /// </summary>
-        Default = 0,
+        Default = 1,
 
         /// <summary>只读
         /// </summary>
-        Read = 1,
+        Read = 2,
 
         /// <summary>能读能写
         /// </summary>
-        ReadWrite = 2,
+        ReadWrite = 4,
 
         /// <summary>只写
         /// </summary>
-        Write = 4
+        Write = 8
     }
 }

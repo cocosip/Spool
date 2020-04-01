@@ -11,6 +11,10 @@ namespace Spool
         /// </summary>
         public static IServiceProvider UseSpool(this IServiceProvider provider, Action<SpoolOption> configure = null)
         {
+            //设置全局的依赖注入
+            var host = provider.GetService<ISpoolHost>();
+            host.SetupDI(provider);
+
             var option = provider.GetService<SpoolOption>();
             configure?.Invoke(option);
 
@@ -18,18 +22,10 @@ namespace Spool
             var spoolPool = provider.GetService<SpoolPool>();
             spoolPool.Start();
 
-            return provider;
-        }
 
-        /// <summary>关闭Spool
-        /// </summary>
-        public static IServiceProvider ShutdownSpool(this IServiceProvider provider)
-        {
-            //运行SpoolPool
-            var spoolPool = provider.GetService<SpoolPool>();
-            spoolPool.Shutdown();
 
             return provider;
         }
+
     }
 }

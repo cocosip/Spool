@@ -25,11 +25,13 @@ namespace Spool
                 .AddSingleton<ISpoolHost, SpoolHost>()
                 .AddSingleton<IdGenerator>()
                 .AddSingleton<IFilePoolFactory, FilePoolFactory>()
-                .AddSingleton<ITrainFactory, TrainFactory>()
                 .AddScoped<FilePool>()
                 .AddScoped<FilePoolOption>()
+                .AddScoped<ITrainManager, TrainManager>()
                 .AddScoped<IFileWriterManager, FileWriterManager>()
                 .AddScoped<FileWriter>()
+                .AddScoped<Train>()
+                .AddScoped<TrainOption>()
 
                 ;
 

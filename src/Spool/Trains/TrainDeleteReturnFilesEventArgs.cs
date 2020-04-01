@@ -2,16 +2,17 @@
 
 namespace Spool.Trains
 {
-    /// <summary>序列类型转换时的数据
+    /// <summary>在序列删除之后,还有文件归还的操作
     /// </summary>
-    public class TrainTypeChangeEventArgs : EventArgs
+    public class TrainDeleteReturnFilesEventArgs : EventArgs
     {
         /// <summary>序列基本信息
         /// </summary>
         public TrainInfo Info { get; set; }
 
-        /// <summary>转换前序列类型
+        /// <summary>文件数量
         /// </summary>
-        public TrainType SourceType { get; set; }
+        public int FileCount { get; set; }
+
     }
 }

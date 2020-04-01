@@ -67,9 +67,8 @@ public class BuildParameters
         var versionQuality = doc.DocumentElement.SelectSingleNode("/Project/PropertyGroup/VersionQuality").InnerText;
         versionQuality = string.IsNullOrWhiteSpace(versionQuality) ? null : versionQuality;
 
-        var suffix = doc.DocumentElement.SelectSingleNode("/Project/PropertyGroup/VersionSuffix").InnerText;
-
-        //如果本地发布,就加dev,如果是nuget发布,就加preview
+		var suffix=doc.DocumentElement.SelectSingleNode("/Project/PropertyGroup/VersionSuffix").InnerText;
+		//如果本地发布,就加dev,如果是nuget发布,就加preview
         if (IsLocalBuild)
         {
             suffix += "dev-" + Util.CreateStamp();
@@ -87,7 +86,8 @@ public class BuildParameters
 			}
         }
         suffix = string.IsNullOrWhiteSpace(suffix) ? null : suffix;
-        context.Information($"Suffix:{suffix}");
+		
+		context.Information($"Suffix:{suffix}");
 
         Version =
             new BuildVersion(int.Parse(versionMajor), int.Parse(versionMinor), int.Parse(versionPatch), versionQuality);
@@ -135,11 +135,11 @@ public class BuildParameters
             SkipSigning = StringComparer.OrdinalIgnoreCase.Equals("True", context.Argument("skipsigning", "True")),
             SkipGitVersion = StringComparer.OrdinalIgnoreCase.Equals("True", context.EnvironmentVariable("SKIP_GITVERSION")),
             SkipOpenCover = true, //StringComparer.OrdinalIgnoreCase.Equals("True", context.EnvironmentVariable("CAKE_SKIP_OPENCOVER"))
-            Projects = context.GetDirectories("./*/src/*"),
-            TestProjects = context.GetDirectories("./*/test/*"),
-            ProjectFiles = context.GetFiles("./*/src/*/*.csproj"),
-            TestProjectFiles = context.GetFiles("./*/test/*/*.csproj"),
-            PackageIds = Util.GetPackageIds(context, context.GetFiles("./*/src/*/*.csproj"))
+            Projects = context.GetDirectories("./src/*"),
+            TestProjects = context.GetDirectories("./test/*"),
+            ProjectFiles = context.GetFiles("./src/*/*.csproj"),
+            TestProjectFiles = context.GetFiles("./test/DotCommon.Test/*.csproj"),
+            PackageIds = Util.GetPackageIds(context, context.GetFiles("./src/*/*.csproj"))
         };
         context.Information($"Cake BuildParameters:-------------begin--------------");
         context.Information($"IsLocalBuild:{parameters.IsLocalBuild}");
@@ -163,7 +163,7 @@ public class BuildParameters
         return (buildSystem.TravisCI.IsRunningOnTravisCI && StringComparer.OrdinalIgnoreCase.Equals("true", buildSystem.TravisCI.Environment.Repository.PullRequest)) || (buildSystem.AppVeyor.IsRunningOnAppVeyor && buildSystem.AppVeyor.Environment.PullRequest.IsPullRequest) || ((buildSystem.TFBuild.IsRunningOnAzurePipelines||buildSystem.TFBuild.IsRunningOnAzurePipelinesHosted) &&buildSystem.TFBuild.Environment.PullRequest.IsPullRequest);
     }
 
-       private static bool IsTheMasterBranch(BuildSystem buildSystem)
+    private static bool IsTheMasterBranch(BuildSystem buildSystem)
     {
         return (buildSystem.TravisCI.IsRunningOnTravisCI && StringComparer.OrdinalIgnoreCase.Equals("master", buildSystem.TravisCI.Environment.Build.Branch)) || (buildSystem.AppVeyor.IsRunningOnAppVeyor && StringComparer.OrdinalIgnoreCase.Equals("master", buildSystem.AppVeyor.Environment.Repository.Branch)) || ((buildSystem.TFBuild.IsRunningOnAzurePipelines||buildSystem.TFBuild.IsRunningOnAzurePipelinesHosted) &&StringComparer.OrdinalIgnoreCase.Equals("master", buildSystem.TFBuild.Environment.Repository.SourceBranchName));
     }
