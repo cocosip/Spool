@@ -12,9 +12,9 @@
         /// </summary>
         public string Path { get; set; }
 
-        /// <summary>最大的写入数
+        /// <summary>最大的写入数(当数据为0时不限制)
         /// </summary>
-        public int MaxFileWriterCount { get; set; } = 10;
+        public int MaxFileWriterCount { get; set; } = 0;
 
         /// <summary>写入文件缓存大小
         /// </summary>

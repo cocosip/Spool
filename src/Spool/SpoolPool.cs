@@ -37,75 +37,75 @@ namespace Spool
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="stream">文件流</param>
         /// <param name="fileExt">文件扩展名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string groupName, Stream stream, string fileExt)
+        public async Task<SpoolFile> WriteAsync(string poolName, Stream stream, string fileExt)
         {
             //获取文件池
-            var filePool = GetFilePool(groupName);
+            var filePool = GetFilePool(poolName);
             return await filePool.WriteFileAsync(stream, fileExt);
         }
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="buffer">文件二进制流</param>
         /// <param name="fileExt">文件扩展名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string groupName, byte[] buffer, string fileExt)
+        public async Task<SpoolFile> WriteAsync(string poolName, byte[] buffer, string fileExt)
         {
             using (var ms = new MemoryStream(buffer))
             {
-                return await WriteAsync(groupName, ms, fileExt);
+                return await WriteAsync(poolName, ms, fileExt);
             }
         }
 
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="filename">文件名(全路径)</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string groupName, string filename)
+        public async Task<SpoolFile> WriteAsync(string poolName, string filename)
         {
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 var fileExt = PathUtil.GetPathExtension(filename);
-                return await WriteAsync(groupName, fs, fileExt);
+                return await WriteAsync(poolName, fs, fileExt);
             }
         }
 
         /// <summary>获取文件
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="count">数量</param>
         /// <returns></returns>
-        public SpoolFile[] Get(string groupName, int count)
+        public SpoolFile[] Get(string poolName, int count)
         {
-            var filePool = GetFilePool(groupName);
+            var filePool = GetFilePool(poolName);
             return filePool.GetFiles(count);
         }
 
         /// <summary>归还数据
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="spoolFiles">文件列表</param>
-        public void Return(string groupName, params SpoolFile[] spoolFiles)
+        public void Return(string poolName, params SpoolFile[] spoolFiles)
         {
-            var filePool = GetFilePool(groupName);
+            var filePool = GetFilePool(poolName);
             filePool.ReturnFiles(spoolFiles);
         }
 
         /// <summary>释放文件
         /// </summary>
-        /// <param name="groupName">组名</param>
+        /// <param name="poolName">组名</param>
         /// <param name="spoolFiles">文件列表</param>
 
-        public void Release(string groupName, params SpoolFile[] spoolFiles)
+        public void Release(string poolName, params SpoolFile[] spoolFiles)
         {
-            var filePool = GetFilePool(groupName);
+            var filePool = GetFilePool(poolName);
             filePool.ReleaseFiles(spoolFiles);
         }
 
@@ -147,15 +147,15 @@ namespace Spool
 
         /// <summary>根据组名获取文件池
         /// </summary>
-        private FilePool GetFilePool(string groupName)
+        private FilePool GetFilePool(string poolName)
         {
-            if (string.IsNullOrWhiteSpace(groupName))
+            if (string.IsNullOrWhiteSpace(poolName))
             {
-                groupName = _option.DefaultPool;
+                poolName = _option.DefaultPool;
             }
-            if (!_filePoolDict.TryGetValue(groupName, out FilePool filePool))
+            if (!_filePoolDict.TryGetValue(poolName, out FilePool filePool))
             {
-                throw new ArgumentException($"未找到名为'{groupName}' 的文件池,请检查配置.");
+                throw new ArgumentException($"未找到名为'{poolName}' 的文件池,请检查配置.");
             }
             return filePool;
         }

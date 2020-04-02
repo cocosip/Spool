@@ -19,7 +19,14 @@ namespace Spool
         {
             var option = new SpoolOption();
             configure?.Invoke(option);
+            return services.AddSpool(option);
+        }
 
+ 
+        /// <summary>添加Spool
+        /// </summary>
+        public static IServiceCollection AddSpool(this IServiceCollection services, SpoolOption option)
+        {
             services
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<SpoolOption>(option)
@@ -33,10 +40,7 @@ namespace Spool
                 .AddScoped<IFileWriterManager, FileWriterManager>()
                 .AddScoped<FileWriter>()
                 .AddScoped<Train>()
-                .AddScoped<TrainOption>()
-
-                ;
-
+                .AddScoped<TrainOption>();
             return services;
         }
     }

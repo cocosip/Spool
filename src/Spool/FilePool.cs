@@ -66,9 +66,17 @@ namespace Spool
             //文件夹监控
             if (Option.EnableFileWatcher)
             {
+                if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
+                {
+                    throw new ArgumentException("监控目录为空,无法启动监控功能!");
+                }
+                if (DirectoryHelper.CreateIfNotExists(Option.FileWatcherPath))
+                {
+                    _logger.LogInformation("创建文件池:'{0}'的监控目录:'{1}'.", Option.Name, Option.FileWatcherPath);
+                }
+
                 StartScanFileWatcherTask();
             }
-
 
             IsRunning = true;
         }
@@ -263,10 +271,6 @@ namespace Spool
         /// </summary>
         private void StartScanFileWatcherTask()
         {
-            if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
-            {
-                throw new ArgumentException("监控目录为空,无法启动监控功能!");
-            }
             _scheduleService.StartTask($"FilePool.{Option.Name}.ScanFileWatcher", ScanFileWatcher, 1000, Option.ScanFileWatcherMillSeconds);
         }
 
