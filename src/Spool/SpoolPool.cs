@@ -2,7 +2,6 @@
 using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -158,15 +157,6 @@ namespace Spool
                 throw new ArgumentException($"未找到名为'{poolName}' 的文件池,请检查配置.");
             }
             return filePool;
-        }
-
-
-
-        /// <summary>关闭文件池
-        /// </summary>
-        private void ShutdownFilePools()
-        {
-
         }
 
     }

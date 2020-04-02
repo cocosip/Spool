@@ -12,6 +12,8 @@ namespace Spool.Demo
     class Program
     {
         static IServiceProvider Provider { get; set; }
+
+        static int FilePoolCount = 10;
         static void Main(string[] args)
         {
 
@@ -19,19 +21,19 @@ namespace Spool.Demo
             {
                 DefaultPool = "pool1"
             };
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < FilePoolCount; i++)
             {
                 spoolOption.FilePools.Add(new FilePoolDescriptor()
                 {
                     Name = $"pool{i}",
                     Path = $"D:\\pool{i}",
-                   // MaxFileWriterCount = 50,
+                    MaxFileWriterCount = 50,
                     TrainMaxFileCount = 65535,
                     WriteBufferSize = 1024 * 1024 * 2,
                     EnableAutoReturn = true,
                     AutoReturnSeconds = 10,
                     ScanReturnFileMillSeconds = 1000,
-                    EnableFileWatcher = true,
+                    EnableFileWatcher = false,
                     FileWatcherPath = $"D:\\pool_watcher{i}",
                     ScanFileWatcherMillSeconds = 5000,
                 });
@@ -69,33 +71,32 @@ namespace Spool.Demo
         {
             var spoolPool = Provider.GetService<SpoolPool>();
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < FilePoolCount; i++)
             {
-                var total = 500000;
+                var total = 10000;
                 var currentWrite = 0;
-                var buffer = File.ReadAllBytes(@"D:\DicomTests\FILE0.dcm");
+                var buffer = File.ReadAllBytes(@"D:\FILE0.dcm");
                 var poolName = $"pool{i}";
                 var ext = ".dcm";
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
                     while (currentWrite < total)
                     {
                         //写入
-                        spoolPool.WriteAsync(poolName, buffer, ext).ContinueWith(t =>
-                        {
-                            if (t.IsCompleted)
-                            {
-                                currentWrite++;
-                            }
-                        });
+                        await spoolPool.WriteAsync(poolName, buffer, ext);
+                        Interlocked.Increment(ref currentWrite);
+                        Thread.Sleep(50);
                     }
 
                 });
 
                 Task.Run(() =>
                 {
-                    Console.WriteLine("文件池:{0} 已写入文件数:{1}", poolName, currentWrite);
-                    Thread.Sleep(1000);
+                    while (true)
+                    {
+                        Console.WriteLine("文件池:{0} 已写入文件数:{1}", poolName, currentWrite);
+                        Thread.Sleep(1000);
+                    }
                 });
             }
 
@@ -107,7 +108,7 @@ namespace Spool.Demo
         public static void GetFileTest()
         {
             var spoolPool = Provider.GetService<SpoolPool>();
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < FilePoolCount; i++)
             {
                 var poolName = $"pool{i}";
                 Task.Run(() =>
