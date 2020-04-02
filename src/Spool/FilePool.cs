@@ -4,6 +4,7 @@ using Spool.Utility;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -87,7 +88,14 @@ namespace Spool
         public List<SpoolFile> GetFiles(int count = 1)
         {
             var train = _trainManager.GetReadTrain();
-            return train.GetFiles(count);
+            var spoolFiles = train.GetFiles(count);
+            if (spoolFiles.Count < count)
+            {
+                var secondTrain = _trainManager.GetReadTrain();
+                var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
+                spoolFiles.AddRange(secondSpoolFiles);
+            }
+            return spoolFiles;
         }
 
         /// <summary>归还数据
@@ -95,16 +103,24 @@ namespace Spool
         /// <param name="spoolFiles">文件列表</param>
         public void ReturnFiles(List<SpoolFile> spoolFiles)
         {
-            var train = _trainManager.GetReadTrain();
-            train.ReturnFiles(spoolFiles);
+            var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
+            foreach (var groupSpoolFile in groupSpoolFiles)
+            {
+                var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
+                train.ReturnFiles(groupSpoolFile.ToList());
+            }
         }
 
         /// <summary>释放文件
         /// </summary>
         public void ReleaseFiles(List<SpoolFile> spoolFiles)
         {
-            var train = _trainManager.GetReadTrain();
-            train.ReleaseFiles(spoolFiles);
+            var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
+            foreach (var groupSpoolFile in groupSpoolFiles)
+            {
+                var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
+                train.ReleaseFiles(groupSpoolFile.ToList());
+            }
         }
 
         /// <summary>初始化

@@ -18,6 +18,18 @@ namespace Spool.Utility
             return false;
         }
 
+        /// <summary>如果文件夹存在就删除
+        /// </summary>
+        public static bool DeleteIfExist(string directory)
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory);
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>Copy files and directorys
         /// </summary>
         public static void DirectoryCopy(string sourceDir, string targetDir)

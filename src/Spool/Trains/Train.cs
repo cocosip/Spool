@@ -52,6 +52,10 @@ namespace Spool.Trains
         /// </summary>
         public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
 
+        /// <summary>序列写满
+        /// </summary>
+        public event EventHandler<TrainWriteOverEventArgs> OnWriteOver;
+
         ///// <summary>序列标记为删除后,有归还操作
         ///// </summary>
         //public event EventHandler<TrainDeleteReturnFilesEventArgs> OnDeleteReturn;
@@ -98,6 +102,22 @@ namespace Spool.Trains
                 var path = GenerateFilePath(fileExt);
                 await fileWriter.WriteFileAsync(stream, path);
                 spoolFile.Path = path;
+
+                //写入队列
+                _pendingQueue.Enqueue(spoolFile);
+
+                //是否写满了
+                if (_pendingQueue.Count > _option.TrainMaxFileCount)
+                {
+                    var info = BuildInfo();
+                    var args = new TrainWriteOverEventArgs()
+                    {
+                        Info = info,
+                    };
+                    OnWriteOver.Invoke(this, args);
+                }
+
+
                 return spoolFile;
             }
             catch (Exception ex)

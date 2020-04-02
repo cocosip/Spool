@@ -27,6 +27,7 @@ namespace Spool
                 FileWatcherPath = descriptor.FileWatcherPath,
                 MaxFileWriterCount = descriptor.MaxFileWriterCount,
                 WriteBufferSize = descriptor.WriteBufferSize,
+                TrainMaxFileCount = descriptor.TrainMaxFileCount,
                 EnableAutoReturn = descriptor.EnableAutoReturn,
                 AutoReturnSeconds = descriptor.AutoReturnSeconds,
                 ScanReturnFileMillSeconds = descriptor.ScanReturnFileMillSeconds
@@ -53,10 +54,14 @@ namespace Spool
         {
             scopeOption.Name = descriptor.Name;
             scopeOption.Path = descriptor.Path;
-            scopeOption.EnableFileWatcher = descriptor.EnableFileWatcher;
-            scopeOption.FileWatcherPath = descriptor.FileWatcherPath;
+          
             scopeOption.MaxFileWriterCount = descriptor.MaxFileWriterCount;
             scopeOption.WriteBufferSize = descriptor.WriteBufferSize;
+            scopeOption.TrainMaxFileCount = descriptor.TrainMaxFileCount;
+
+            scopeOption.EnableFileWatcher = descriptor.EnableFileWatcher;
+            scopeOption.FileWatcherPath = descriptor.FileWatcherPath;
+            
             scopeOption.EnableAutoReturn = descriptor.EnableAutoReturn;
             scopeOption.AutoReturnSeconds = descriptor.AutoReturnSeconds;
             scopeOption.ScanReturnFileMillSeconds = descriptor.ScanReturnFileMillSeconds;
@@ -71,10 +76,14 @@ namespace Spool
         {
             scopeOption.Name = option.Name;
             scopeOption.Path = option.Path;
-            scopeOption.EnableFileWatcher = option.EnableFileWatcher;
-            scopeOption.FileWatcherPath = option.FileWatcherPath;
+ 
             scopeOption.MaxFileWriterCount = option.MaxFileWriterCount;
             scopeOption.WriteBufferSize = option.WriteBufferSize;
+            scopeOption.TrainMaxFileCount = option.TrainMaxFileCount;
+
+            scopeOption.EnableFileWatcher = option.EnableFileWatcher;
+            scopeOption.FileWatcherPath = option.FileWatcherPath;
+
             scopeOption.EnableAutoReturn = option.EnableAutoReturn;
             scopeOption.AutoReturnSeconds = option.AutoReturnSeconds;
             scopeOption.ScanReturnFileMillSeconds = option.ScanReturnFileMillSeconds;

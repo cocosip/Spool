@@ -19,5 +19,9 @@
         /// <summary>获取可读的序列
         /// </summary>
         Train GetReadTrain();
+
+        /// <summary>根据索引号获取序列
+        /// </summary>
+        Train GetTrainByIndex(int index);
     }
 }

@@ -9,6 +9,7 @@
         /// </summary>
         public static string GenerateCode(this SpoolFile file)
         {
+            //return file.Path;
             return SHAUtil.GetHex16StringSHA1Hash($"{file.FilePoolName}{file.TrainIndex}{file.Path}");
         }
     }
