@@ -37,11 +37,11 @@ namespace Spool
 
         /// <summary>写文件
         /// </summary>
+        /// <param name="groupName">组名</param>
         /// <param name="stream">文件流</param>
         /// <param name="fileExt">文件扩展名</param>
-        /// <param name="groupName">组名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(Stream stream, string fileExt, string groupName = "")
+        public async Task<SpoolFile> WriteAsync(string groupName, Stream stream, string fileExt)
         {
             //获取文件池
             var filePool = GetFilePool(groupName);
@@ -50,39 +50,39 @@ namespace Spool
 
         /// <summary>写文件
         /// </summary>
+        /// <param name="groupName">组名</param>
         /// <param name="buffer">文件二进制流</param>
         /// <param name="fileExt">文件扩展名</param>
-        /// <param name="groupName">组名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(byte[] buffer, string fileExt, string groupName = "")
+        public async Task<SpoolFile> WriteAsync(string groupName, byte[] buffer, string fileExt)
         {
             using (var ms = new MemoryStream(buffer))
             {
-                return await WriteAsync(ms, fileExt, groupName);
+                return await WriteAsync(groupName, ms, fileExt);
             }
         }
 
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="filename">文件名(全路径)</param>
         /// <param name="groupName">组名</param>
+        /// <param name="filename">文件名(全路径)</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string filename, string groupName = "")
+        public async Task<SpoolFile> WriteAsync(string groupName, string filename)
         {
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 var fileExt = PathUtil.GetPathExtension(filename);
-                return await WriteAsync(fs, fileExt, groupName);
+                return await WriteAsync(groupName, fs, fileExt);
             }
         }
 
         /// <summary>获取文件
         /// </summary>
-        /// <param name="count">数量</param>
         /// <param name="groupName">组名</param>
+        /// <param name="count">数量</param>
         /// <returns></returns>
-        public List<SpoolFile> Get(int count, string groupName = "")
+        public SpoolFile[] Get(string groupName, int count)
         {
             var filePool = GetFilePool(groupName);
             return filePool.GetFiles(count);
@@ -90,9 +90,9 @@ namespace Spool
 
         /// <summary>归还数据
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
         /// <param name="groupName">组名</param>
-        public void Return(List<SpoolFile> spoolFiles, string groupName = "")
+        /// <param name="spoolFiles">文件列表</param>
+        public void Return(string groupName, params SpoolFile[] spoolFiles)
         {
             var filePool = GetFilePool(groupName);
             filePool.ReturnFiles(spoolFiles);
@@ -100,9 +100,10 @@ namespace Spool
 
         /// <summary>释放文件
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
         /// <param name="groupName">组名</param>
-        public void Release(List<SpoolFile> spoolFiles, string groupName = "")
+        /// <param name="spoolFiles">文件列表</param>
+
+        public void Release(string groupName, params SpoolFile[] spoolFiles)
         {
             var filePool = GetFilePool(groupName);
             filePool.ReleaseFiles(spoolFiles);

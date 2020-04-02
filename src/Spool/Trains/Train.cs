@@ -137,7 +137,7 @@ namespace Spool.Trains
         /// </summary>
         /// <param name="count">数量</param>
         /// <returns></returns>
-        public List<SpoolFile> GetFiles(int count = 1)
+        public SpoolFile[] GetFiles(int count = 1)
         {
             var spoolFiles = new List<SpoolFile>();
             try
@@ -162,16 +162,16 @@ namespace Spool.Trains
                 //如果出现异常,则判断集合是否为空
                 if (spoolFiles.Any())
                 {
-                    ReturnFiles(spoolFiles);
+                    ReturnFiles(spoolFiles.ToArray());
                 }
             }
-            return spoolFiles;
+            return spoolFiles.ToArray();
         }
 
         /// <summary>归还数据
         /// </summary>
         /// <param name="spoolFiles">文件列表</param>
-        public void ReturnFiles(List<SpoolFile> spoolFiles)
+        public void ReturnFiles(params SpoolFile[] spoolFiles)
         {
             foreach (var spoolFile in spoolFiles)
             {
@@ -191,7 +191,7 @@ namespace Spool.Trains
 
         /// <summary>释放文件
         /// </summary>
-        public void ReleaseFiles(List<SpoolFile> spoolFiles)
+        public void ReleaseFiles(params SpoolFile[]  spoolFiles)
         {
             try
             {

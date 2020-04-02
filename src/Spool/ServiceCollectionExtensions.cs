@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Spool.Scheduling;
 using Spool.Trains;
 using Spool.Utility;
 using Spool.Writers;
@@ -20,6 +21,7 @@ namespace Spool
             configure?.Invoke(option);
 
             services
+                .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<SpoolOption>(option)
                 .AddSingleton<SpoolPool>()
                 .AddSingleton<ISpoolHost, SpoolHost>()

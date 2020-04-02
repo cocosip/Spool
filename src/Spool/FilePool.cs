@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Spool.Scheduling;
 using Spool.Trains;
 using Spool.Utility;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +18,7 @@ namespace Spool
 
         private readonly ILogger _logger;
         private readonly ISpoolHost _host;
+        private readonly IScheduleService _scheduleService;
         private readonly ITrainManager _trainManager;
 
         /// <summary>文件池的配置信息
@@ -26,19 +29,20 @@ namespace Spool
         /// </summary>
         public bool IsRunning { get; private set; }
 
-        /// <summary>被释放,但是还未处理的文件
+        /// <summary>被取走的文件
         /// </summary>
-        private readonly ConcurrentQueue<SpoolFile> _returnFileQueue;
+        private readonly ConcurrentDictionary<string, SpoolFileFuture> _takeFileDict;
 
 
-        public FilePool(ILogger<FilePool> logger, ISpoolHost host, ITrainManager trainManager, FilePoolOption option)
+        public FilePool(ILogger<FilePool> logger, ISpoolHost host, IScheduleService scheduleService, ITrainManager trainManager, FilePoolOption option)
         {
             _logger = logger;
             _host = host;
+            _scheduleService = scheduleService;
             _trainManager = trainManager;
             Option = option;
 
-            _returnFileQueue = new ConcurrentQueue<SpoolFile>();
+            _takeFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
         }
 
         /// <summary>运行文件池
@@ -53,6 +57,11 @@ namespace Spool
             //序列启动
             Initialize();
 
+            if (Option.EnableAutoReturn)
+            {
+                StartScanTimeoutTakeFileTask();
+            }
+
             IsRunning = true;
         }
 
@@ -66,6 +75,12 @@ namespace Spool
                 _logger.LogInformation("当前FilePool:'{0}',路径:{1},已停止,请勿重复操作。", Option.Name, Option.Path);
                 return;
             }
+
+            if (Option.EnableAutoReturn)
+            {
+                StopScanTimeoutTakeFileTask();
+            }
+
             IsRunning = false;
         }
 
@@ -85,41 +100,61 @@ namespace Spool
         /// </summary>
         /// <param name="count">数量</param>
         /// <returns></returns>
-        public List<SpoolFile> GetFiles(int count = 1)
+        public SpoolFile[] GetFiles(int count = 1)
         {
             var train = _trainManager.GetReadTrain();
-            var spoolFiles = train.GetFiles(count);
+            var spoolFiles = train.GetFiles(count).ToList();
             if (spoolFiles.Count < count)
             {
                 var secondTrain = _trainManager.GetReadTrain();
                 var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
                 spoolFiles.AddRange(secondSpoolFiles);
             }
-            return spoolFiles;
+
+            //是否启动自动归还功能
+            if (Option.EnableAutoReturn)
+            {
+                foreach (var spoolFile in spoolFiles)
+                {
+                    var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
+                    if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
+                    {
+                        _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
+                    }
+                }
+
+            }
+
+            return spoolFiles.ToArray();
         }
 
         /// <summary>归还数据
         /// </summary>
         /// <param name="spoolFiles">文件列表</param>
-        public void ReturnFiles(List<SpoolFile> spoolFiles)
+        public void ReturnFiles(params SpoolFile[] spoolFiles)
         {
             var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
-                train.ReturnFiles(groupSpoolFile.ToList());
+                train.ReturnFiles(groupSpoolFile.ToArray());
             }
         }
 
         /// <summary>释放文件
         /// </summary>
-        public void ReleaseFiles(List<SpoolFile> spoolFiles)
+        public void ReleaseFiles(params SpoolFile[] spoolFiles)
         {
             var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
-                train.ReleaseFiles(groupSpoolFile.ToList());
+                train.ReleaseFiles(groupSpoolFile.ToArray());
+            }
+
+            if (Option.EnableAutoReturn)
+            {
+                TryRemoveTakeFiles(spoolFiles);
             }
         }
 
@@ -137,7 +172,67 @@ namespace Spool
             _trainManager.Initialize();
         }
 
+        /// <summary>开始查询过期的未归还的文件
+        /// </summary>
+        private void StartScanTimeoutTakeFileTask()
+        {
+            _scheduleService.StartTask($"FilePool.{Option.Name}.ScanTimeoutTakeFile", ScanTimeoutTakeFile, 1000, Option.ScanReturnFileMillSeconds);
+        }
 
+        /// <summary>停止查询过期的未归还的文件
+        /// </summary>
+        private void StopScanTimeoutTakeFileTask()
+        {
+            _scheduleService.StopTask($"FilePool.{Option.Name}.ScanTimeoutTakeFile");
+        }
+
+        /// <summary>过期未归还文件处理程序
+        /// </summary>
+        private void ScanTimeoutTakeFile()
+        {
+            var timeoutKeyList = new List<string>();
+            foreach (var entry in _takeFileDict)
+            {
+                if (entry.Value.IsTimeout())
+                {
+                    timeoutKeyList.Add(entry.Key);
+                }
+            }
+            foreach (var key in timeoutKeyList)
+            {
+
+                if (_takeFileDict.TryRemove(key, out SpoolFileFuture spoolFileFuture))
+                {
+                    try
+                    {
+                        ReturnFiles(spoolFileFuture.File);
+                        _logger.LogDebug("归还文件:{0}", spoolFileFuture.File);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "系统自动归还文件出错,文件信息:{0}", spoolFileFuture.File);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("移除过期文件失败,文件Key:{0}", key);
+                }
+            }
+        }
+
+        /// <summary>移除指定取走文件
+        /// </summary>
+        private void TryRemoveTakeFiles(params SpoolFile[] spoolFiles)
+        {
+            foreach (var spoolFile in spoolFiles)
+            {
+                if (!_takeFileDict.TryRemove(spoolFile.GenerateCode(), out SpoolFileFuture _))
+                {
+                    _logger.LogWarning("移除取走的文件失败,{0}", spoolFile);
+                }
+
+            }
+        }
 
 
     }
