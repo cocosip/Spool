@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -15,9 +16,9 @@ namespace Spool
     /// </summary>
     public class FilePool
     {
+        private int _inFileWatcher = 0;
 
         private readonly ILogger _logger;
-        private readonly ISpoolHost _host;
         private readonly IScheduleService _scheduleService;
         private readonly ITrainManager _trainManager;
 
@@ -34,10 +35,9 @@ namespace Spool
         private readonly ConcurrentDictionary<string, SpoolFileFuture> _takeFileDict;
 
 
-        public FilePool(ILogger<FilePool> logger, ISpoolHost host, IScheduleService scheduleService, ITrainManager trainManager, FilePoolOption option)
+        public FilePool(ILogger<FilePool> logger, IScheduleService scheduleService, ITrainManager trainManager, FilePoolOption option)
         {
             _logger = logger;
-            _host = host;
             _scheduleService = scheduleService;
             _trainManager = trainManager;
             Option = option;
@@ -57,10 +57,18 @@ namespace Spool
             //序列启动
             Initialize();
 
+            //文件夹监控
             if (Option.EnableAutoReturn)
             {
                 StartScanTimeoutTakeFileTask();
             }
+
+            //文件夹监控
+            if (Option.EnableFileWatcher)
+            {
+                StartScanFileWatcherTask();
+            }
+
 
             IsRunning = true;
         }
@@ -81,6 +89,12 @@ namespace Spool
                 StopScanTimeoutTakeFileTask();
             }
 
+            //文件夹监控
+            if (Option.EnableFileWatcher)
+            {
+                StopScanFileWatcherTask();
+            }
+
             IsRunning = false;
         }
 
@@ -90,10 +104,21 @@ namespace Spool
         /// <param name="stream">文件流</param>
         /// <param name="fileExt">文件扩展名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFile(Stream stream, string fileExt)
+        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
             var train = _trainManager.GetWriteTrain();
-            return await train.WriteFile(stream, fileExt);
+            return await train.WriteFileAsync(stream, fileExt);
+        }
+
+        /// <summary>写文件
+        /// </summary>
+        /// <param name="stream">文件流</param>
+        /// <param name="fileExt">文件扩展名</param>
+        /// <returns></returns>
+        public SpoolFile WriteFile(Stream stream, string fileExt)
+        {
+            var train = _trainManager.GetWriteTrain();
+            return train.WriteFile(stream, fileExt);
         }
 
         /// <summary>获取指定数量的文件
@@ -230,9 +255,85 @@ namespace Spool
                 {
                     _logger.LogWarning("移除取走的文件失败,{0}", spoolFile);
                 }
-
             }
         }
+
+
+        /// <summary>开始监控文件任务
+        /// </summary>
+        private void StartScanFileWatcherTask()
+        {
+            if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
+            {
+                throw new ArgumentException("监控目录为空,无法启动监控功能!");
+            }
+            _scheduleService.StartTask($"FilePool.{Option.Name}.ScanFileWatcher", ScanFileWatcher, 1000, Option.ScanFileWatcherMillSeconds);
+        }
+
+        /// <summary>停止监控文件任务
+        /// </summary>
+        private void StopScanFileWatcherTask()
+        {
+            _scheduleService.StopTask($"FilePool.{Option.Name}.ScanFileWatcher");
+        }
+
+        /// <summary>查询监控目录
+        /// </summary>
+        private void ScanFileWatcher()
+        {
+            if (_inFileWatcher == 1)
+            {
+                _logger.LogWarning("正在进行监控目录的扫描,不会重复进入.文件池:'{0}',监控路径:{1}.", Option.Name, Option.FileWatcherPath);
+                return;
+            }
+            var deleteFiles = new List<string>();
+            try
+            {
+                Interlocked.Exchange(ref _inFileWatcher, 1);
+                var directoryInfo = new DirectoryInfo(Option.FileWatcherPath);
+                var files = directoryInfo.GetFiles();
+                foreach (var file in files)
+                {
+                    //最后写入的时间是2秒前
+                    if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
+                    {
+                        var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
+                        var fileExt = PathUtil.GetPathExtension(file.Name);
+                        WriteFile(fileStream, fileExt);
+                        //添加到删除列表
+                        deleteFiles.Add(file.FullName);
+                        _logger.LogDebug("监控文件:'{0}'被写入到文件池:'{1}'.", file.FullName, Option.Name);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "监控目录出现异常,异常信息:{0}.", ex.Message);
+                //throw ex;
+            }
+            finally
+            {
+                try
+                {
+                    if (deleteFiles.Any())
+                    {
+                        foreach (var deleteFile in deleteFiles)
+                        {
+                            FileHelper.DeleteIfExists(deleteFile);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "删除监控文件出错,异常信息:{0}.", ex.Message);
+                }
+
+                Interlocked.Exchange(ref _inFileWatcher, 0);
+            }
+
+        }
+
 
 
     }

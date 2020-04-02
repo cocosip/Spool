@@ -88,7 +88,20 @@ namespace Spool.Trains
         /// <param name="stream">文件流</param>
         /// <param name="fileExt">文件扩展名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFile(Stream stream, string fileExt)
+        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        {
+            return await Task.Run(() =>
+            {
+                return WriteFile(stream, fileExt);
+            });
+        }
+
+        /// <summary>写文件
+        /// </summary>
+        /// <param name="stream">文件流</param>
+        /// <param name="fileExt">文件扩展名</param>
+        /// <returns></returns>
+        public SpoolFile WriteFile(Stream stream, string fileExt)
         {
             var spoolFile = new SpoolFile()
             {
@@ -100,7 +113,7 @@ namespace Spool.Trains
             {
 
                 var path = GenerateFilePath(fileExt);
-                await fileWriter.WriteFileAsync(stream, path);
+                fileWriter.WriteFile(stream, path);
                 spoolFile.Path = path;
 
                 //写入队列
@@ -129,9 +142,11 @@ namespace Spool.Trains
             {
                 _fileWriterManager.Return(fileWriter);
                 //流释放
+                stream?.Close();
                 stream?.Dispose();
             }
         }
+
 
         /// <summary>获取指定数量的文件
         /// </summary>
@@ -191,7 +206,7 @@ namespace Spool.Trains
 
         /// <summary>释放文件
         /// </summary>
-        public void ReleaseFiles(params SpoolFile[]  spoolFiles)
+        public void ReleaseFiles(params SpoolFile[] spoolFiles)
         {
             try
             {

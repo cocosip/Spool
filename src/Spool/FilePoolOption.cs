@@ -32,6 +32,10 @@
         /// </summary>
         public string FileWatcherPath { get; set; }
 
+        /// <summary>扫描监控目录的间隔(毫秒)
+        /// </summary>
+        public int ScanFileWatcherMillSeconds { get; set; } = 5000;
+
         /// <summary>是否启用自动归还功能(对长时间未归还也未删除的文件进行自动归还)
         /// </summary>
         public bool EnableAutoReturn { get; set; } = false;

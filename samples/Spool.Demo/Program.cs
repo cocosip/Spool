@@ -25,19 +25,21 @@ namespace Spool.Demo
                 EnableAutoReturn = true,
                 AutoReturnSeconds = 5,
                 ScanReturnFileMillSeconds = 1000,
-                EnableFileWatcher = false
+                EnableFileWatcher = true,
+                FileWatcherPath = "D:\\Test3",
+                ScanFileWatcherMillSeconds = 5000,
             };
 
-            var descriptor2 = new FilePoolDescriptor()
-            {
-                Name = "group2",
-                Path = "D:\\Group2",
-                MaxFileWriterCount = 10,
-                TrainMaxFileCount = 200,
-                WriteBufferSize = 1024 * 1024 * 2,
-                EnableAutoReturn = false,
-                EnableFileWatcher = false
-            };
+            //var descriptor2 = new FilePoolDescriptor()
+            //{
+            //    Name = "group2",
+            //    Path = "D:\\Group2",
+            //    MaxFileWriterCount = 10,
+            //    TrainMaxFileCount = 200,
+            //    WriteBufferSize = 1024 * 1024 * 2,
+            //    EnableAutoReturn = false,
+            //    EnableFileWatcher = false
+            //};
 
             IServiceCollection services = new ServiceCollection();
             services.AddLogging(l =>
@@ -111,18 +113,18 @@ namespace Spool.Demo
                     }
                     catch (Exception ex)
                     {
-                        //if (spoolFiles != null && spoolFiles.Length > 0)
-                        //{
-                        //    spoolPool.Return(group, spoolFiles);
-                        //}
+                        if (spoolFiles != null && spoolFiles.Length > 0)
+                        {
+                            spoolPool.Return(group, spoolFiles);
+                        }
                         throw ex;
                     }
                     finally
                     {
-                        //if (spoolFiles != null && spoolFiles.Length > 0)
-                        //{
-                        //    spoolPool.Release(group, spoolFiles);
-                        //}
+                        if (spoolFiles != null && spoolFiles.Length > 0)
+                        {
+                            spoolPool.Release(group, spoolFiles);
+                        }
                     }
                     Thread.Sleep(500);
                 }

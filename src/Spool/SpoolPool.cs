@@ -45,7 +45,7 @@ namespace Spool
         {
             //获取文件池
             var filePool = GetFilePool(groupName);
-            return await filePool.WriteFile(stream, fileExt);
+            return await filePool.WriteFileAsync(stream, fileExt);
         }
 
         /// <summary>写文件

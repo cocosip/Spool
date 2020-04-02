@@ -25,6 +25,7 @@ namespace Spool
                 Path = descriptor.Path,
                 EnableFileWatcher = descriptor.EnableFileWatcher,
                 FileWatcherPath = descriptor.FileWatcherPath,
+                ScanFileWatcherMillSeconds = descriptor.ScanFileWatcherMillSeconds,
                 MaxFileWriterCount = descriptor.MaxFileWriterCount,
                 WriteBufferSize = descriptor.WriteBufferSize,
                 TrainMaxFileCount = descriptor.TrainMaxFileCount,
@@ -54,14 +55,15 @@ namespace Spool
         {
             scopeOption.Name = descriptor.Name;
             scopeOption.Path = descriptor.Path;
-          
+
             scopeOption.MaxFileWriterCount = descriptor.MaxFileWriterCount;
             scopeOption.WriteBufferSize = descriptor.WriteBufferSize;
             scopeOption.TrainMaxFileCount = descriptor.TrainMaxFileCount;
 
             scopeOption.EnableFileWatcher = descriptor.EnableFileWatcher;
             scopeOption.FileWatcherPath = descriptor.FileWatcherPath;
-            
+            scopeOption.ScanFileWatcherMillSeconds = descriptor.ScanFileWatcherMillSeconds;
+
             scopeOption.EnableAutoReturn = descriptor.EnableAutoReturn;
             scopeOption.AutoReturnSeconds = descriptor.AutoReturnSeconds;
             scopeOption.ScanReturnFileMillSeconds = descriptor.ScanReturnFileMillSeconds;
@@ -76,13 +78,14 @@ namespace Spool
         {
             scopeOption.Name = option.Name;
             scopeOption.Path = option.Path;
- 
+
             scopeOption.MaxFileWriterCount = option.MaxFileWriterCount;
             scopeOption.WriteBufferSize = option.WriteBufferSize;
             scopeOption.TrainMaxFileCount = option.TrainMaxFileCount;
 
             scopeOption.EnableFileWatcher = option.EnableFileWatcher;
             scopeOption.FileWatcherPath = option.FileWatcherPath;
+            scopeOption.ScanFileWatcherMillSeconds = option.ScanFileWatcherMillSeconds;
 
             scopeOption.EnableAutoReturn = option.EnableAutoReturn;
             scopeOption.AutoReturnSeconds = option.AutoReturnSeconds;
