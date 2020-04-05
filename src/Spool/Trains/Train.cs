@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Spool.Extensions;
 using Spool.Utility;
 using Spool.Writers;
 using System;

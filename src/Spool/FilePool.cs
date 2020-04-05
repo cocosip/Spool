@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Spool.Extensions;
 using Spool.Scheduling;
 using Spool.Trains;
 using Spool.Utility;
@@ -66,7 +67,7 @@ namespace Spool
             //文件夹监控
             if (Option.EnableFileWatcher)
             {
-                if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
+                if (Option.FileWatcherPath.IsNullOrWhiteSpace())
                 {
                     throw new ArgumentException("监控目录为空,无法启动监控功能!");
                 }

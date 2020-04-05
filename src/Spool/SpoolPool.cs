@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Tasks;
+using Spool.Extensions;
 
 namespace Spool
 {
@@ -148,7 +149,7 @@ namespace Spool
         /// </summary>
         private FilePool GetFilePool(string poolName)
         {
-            if (string.IsNullOrWhiteSpace(poolName))
+            if (poolName.IsNullOrWhiteSpace())
             {
                 poolName = _option.DefaultPool;
             }
