@@ -20,6 +20,6 @@
         /// </summary>
         /// <param name="scopeOption">scope生命周期配置信息</param>
         /// <param name="option">当前文件池配置信息</param>
-        public void SetScopeOption(FilePoolOption scopeOption, FilePoolOption option);
+        void SetScopeOption(FilePoolOption scopeOption, FilePoolOption option);
     }
 }
