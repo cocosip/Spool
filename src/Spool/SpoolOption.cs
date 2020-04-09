@@ -8,7 +8,7 @@ namespace Spool
     {
         /// <summary>默认文件池名
         /// </summary>
-        public string DefaultPool { get; set; } = "Group1";
+        public string DefaultPool { get; set; } = "DefaultPool";
 
         /// <summary>多个文件池配置信息
         /// </summary>

@@ -51,7 +51,7 @@ namespace Spool.Demo
                 .AddSpool(spoolOption);
 
             Provider = services.BuildServiceProvider();
-            Provider.UseSpool();
+            Provider.ConfigureSpool();
 
             Console.WriteLine("初始化完成!");
 
@@ -83,7 +83,7 @@ namespace Spool.Demo
                     while (currentWrite < total)
                     {
                         //写入
-                        await spoolPool.WriteAsync(poolName, buffer, ext);
+                        await spoolPool.WriteAsync(buffer, ext, poolName);
                         Interlocked.Increment(ref currentWrite);
                         Thread.Sleep(50);
                     }
@@ -118,7 +118,7 @@ namespace Spool.Demo
                         var spoolFiles = new SpoolFile[0] { };
                         try
                         {
-                            spoolFiles = spoolPool.Get(poolName, 50);
+                            spoolFiles = spoolPool.Get(50, poolName);
                             //释放
                             spoolPool.Release(poolName, spoolFiles);
                             spoolFiles = new SpoolFile[0] { };

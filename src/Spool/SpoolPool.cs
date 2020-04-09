@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using Spool.Extensions;
 using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Spool.Extensions;
 
 namespace Spool
 {
@@ -16,8 +17,11 @@ namespace Spool
         /// </summary>
         public bool IsRunning { get; private set; } = false;
 
+        /// <summary>配置信息
+        /// </summary>
+        public SpoolOption Option { get; private set; }
+
         private readonly ILogger _logger;
-        private readonly SpoolOption _option;
         private readonly IFilePoolFactory _filePoolFactory;
 
         /// <summary>文件池集合
@@ -29,7 +33,7 @@ namespace Spool
         public SpoolPool(ILogger<SpoolPool> logger, SpoolOption option, IFilePoolFactory filePoolFactory)
         {
             _logger = logger;
-            _option = option;
+            Option = option;
             _filePoolFactory = filePoolFactory;
 
             _filePoolDict = new ConcurrentDictionary<string, FilePool>();
@@ -37,11 +41,11 @@ namespace Spool
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="poolName">组名</param>
         /// <param name="stream">文件流</param>
         /// <param name="fileExt">文件扩展名</param>
+        /// <param name="poolName">组名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string poolName, Stream stream, string fileExt)
+        public async Task<SpoolFile> WriteAsync(Stream stream, string fileExt, string poolName = "")
         {
             //获取文件池
             var filePool = GetFilePool(poolName);
@@ -50,39 +54,39 @@ namespace Spool
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="poolName">组名</param>
         /// <param name="buffer">文件二进制流</param>
         /// <param name="fileExt">文件扩展名</param>
+        /// <param name="poolName">组名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string poolName, byte[] buffer, string fileExt)
+        public async Task<SpoolFile> WriteAsync(byte[] buffer, string fileExt, string poolName = "")
         {
             using (var ms = new MemoryStream(buffer))
             {
-                return await WriteAsync(poolName, ms, fileExt);
+                return await WriteAsync(ms, fileExt, poolName);
             }
         }
 
 
         /// <summary>写文件
         /// </summary>
-        /// <param name="poolName">组名</param>
         /// <param name="filename">文件名(全路径)</param>
+        /// <param name="poolName">组名</param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteAsync(string poolName, string filename)
+        public async Task<SpoolFile> WriteAsync(string filename, string poolName = "")
         {
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 var fileExt = PathUtil.GetPathExtension(filename);
-                return await WriteAsync(poolName, fs, fileExt);
+                return await WriteAsync(fs, fileExt, poolName);
             }
         }
 
         /// <summary>获取文件
         /// </summary>
-        /// <param name="poolName">组名</param>
         /// <param name="count">数量</param>
+        /// <param name="poolName">组名</param>
         /// <returns></returns>
-        public SpoolFile[] Get(string poolName, int count)
+        public SpoolFile[] Get(int count, string poolName = "")
         {
             var filePool = GetFilePool(poolName);
             return filePool.GetFiles(count);
@@ -90,9 +94,9 @@ namespace Spool
 
         /// <summary>归还数据
         /// </summary>
-        /// <param name="poolName">组名</param>
         /// <param name="spoolFiles">文件列表</param>
-        public void Return(string poolName, params SpoolFile[] spoolFiles)
+        /// <param name="poolName">组名</param>
+        public void Return(string poolName = "", params SpoolFile[] spoolFiles)
         {
             var filePool = GetFilePool(poolName);
             filePool.ReturnFiles(spoolFiles);
@@ -103,7 +107,7 @@ namespace Spool
         /// <param name="poolName">组名</param>
         /// <param name="spoolFiles">文件列表</param>
 
-        public void Release(string poolName, params SpoolFile[] spoolFiles)
+        public void Release(string poolName = "", params SpoolFile[] spoolFiles)
         {
             var filePool = GetFilePool(poolName);
             filePool.ReleaseFiles(spoolFiles);
@@ -119,7 +123,18 @@ namespace Spool
                 return;
             }
 
-            foreach (var descriptor in _option.FilePools)
+            //判断是否有文件池
+            if (!Option.FilePools.Any())
+            {
+                throw new ArgumentException("不存在任何文件池!");
+            }
+            //设置默认文件池名称
+            if (Option.DefaultPool.IsNullOrWhiteSpace())
+            {
+                Option.DefaultPool = Option.FilePools.FirstOrDefault()?.Name;
+            }
+
+            foreach (var descriptor in Option.FilePools)
             {
                 var filePool = _filePoolFactory.CreateFilePool(descriptor);
                 if (!_filePoolDict.TryAdd(descriptor.Name, filePool))
@@ -151,7 +166,7 @@ namespace Spool
         {
             if (poolName.IsNullOrWhiteSpace())
             {
-                poolName = _option.DefaultPool;
+                poolName = Option.DefaultPool;
             }
             if (!_filePoolDict.TryGetValue(poolName, out FilePool filePool))
             {

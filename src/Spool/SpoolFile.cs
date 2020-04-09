@@ -1,4 +1,6 @@
-﻿namespace Spool
+﻿using Spool.Utility;
+
+namespace Spool
 {
     /// <summary>文件信息
     /// </summary>
@@ -16,11 +18,21 @@
         /// </summary>
         public string Path { get; set; }
 
+        /// <summary>文件扩展名
+        /// </summary>
+        public string FileExt
+        {
+            get
+            {
+                return PathUtil.GetPathExtension(Path);
+            }
+        }
+
         /// <summary>文件信息
         /// </summary>
         public override string ToString()
         {
-            return $"[FilePool:{FilePoolName},Index:{TrainIndex},Path:{Path}]";
+            return $"[FilePool:{FilePoolName},Index:{TrainIndex},Path:{Path},FileExt:{FileExt}]";
         }
     }
 }

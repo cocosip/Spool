@@ -9,7 +9,7 @@ namespace Spool
     {
         /// <summary>Spool依赖注入
         /// </summary>
-        public static IServiceProvider UseSpool(this IServiceProvider provider, Action<SpoolOption> configure = null)
+        public static IServiceProvider ConfigureSpool(this IServiceProvider provider, Action<SpoolOption> configure = null)
         {
             //设置全局的依赖注入
             var host = provider.GetService<ISpoolHost>();
@@ -21,8 +21,6 @@ namespace Spool
             //运行SpoolPool
             var spoolPool = provider.GetService<SpoolPool>();
             spoolPool.Start();
-
-
 
             return provider;
         }

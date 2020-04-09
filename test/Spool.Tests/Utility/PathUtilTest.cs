@@ -35,7 +35,7 @@ namespace Spool.Tests.Utility
         public void MapPath_Test()
         {
             var path = PathUtil.MapPath("../../Root");
-            var match1 = Regex.IsMatch(path, @"^.*DotCommon\\test\\Root$");
+            var match1 = Regex.IsMatch(path, @"^.*Spool\\test\\Root$");
             Assert.True(match1);
         }
 
