@@ -148,13 +148,31 @@ namespace Spool
             //是否启动自动归还功能
             if (Option.EnableAutoReturn)
             {
+                //foreach (var spoolFile in spoolFiles)
+                //{
+                //    var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
+                //    if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
+                //    {
+                //        _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
+                //    }
+                //}
+
                 foreach (var spoolFile in spoolFiles)
                 {
-                    var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
-                    if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
+                    var key = spoolFile.GenerateCode();
+                    if (_takeFileDict.ContainsKey(key))
                     {
-                        _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
+                        _logger.LogDebug("当前取走的文件中已经包含了该文件,文件Key:'{0}'.", key);
                     }
+                    else
+                    {
+                        var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
+                        if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
+                        {
+                            _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
+                        }
+                    }
+
                 }
 
             }
@@ -172,6 +190,12 @@ namespace Spool
             {
                 var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
                 train.ReturnFiles(groupSpoolFile.ToArray());
+            }
+
+            //自动归还,需要移除文件
+            if (Option.EnableAutoReturn)
+            {
+                TryRemoveTakeFiles(spoolFiles);
             }
         }
 
