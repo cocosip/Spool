@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 
 namespace Spool
@@ -15,7 +16,7 @@ namespace Spool
             var host = provider.GetService<ISpoolHost>();
             host.SetupDI(provider);
 
-            var option = provider.GetService<SpoolOption>();
+            var option = provider.GetService<IOptions<SpoolOption>>().Value;
             configure?.Invoke(option);
 
             //运行SpoolPool

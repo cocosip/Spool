@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Spool.Extensions;
 using Spool.Utility;
 using System;
@@ -30,10 +31,10 @@ namespace Spool
 
         /// <summary>ctor
         /// </summary>
-        public SpoolPool(ILogger<SpoolPool> logger, SpoolOption option, IFilePoolFactory filePoolFactory)
+        public SpoolPool(ILogger<SpoolPool> logger, IOptions<SpoolOption> option, IFilePoolFactory filePoolFactory)
         {
             _logger = logger;
-            Option = option;
+            Option = option.Value;
             _filePoolFactory = filePoolFactory;
 
             _filePoolDict = new ConcurrentDictionary<string, FilePool>();
