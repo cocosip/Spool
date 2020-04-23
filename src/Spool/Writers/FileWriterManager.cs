@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Spool.Dependency;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Spool.Writers
 {
@@ -11,7 +10,7 @@ namespace Spool.Writers
     public class FileWriterManager : IFileWriterManager
     {
         private int _fileWriterCount = 0;
-        private int _maxFileWriterCount = int.MaxValue;
+        private readonly int _maxFileWriterCount = int.MaxValue;
         private readonly ConcurrentStack<FileWriter> _fileWriterStack;
         private readonly AutoResetEvent _autoResetEvent;
         private readonly ILogger _logger;

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -16,7 +17,7 @@ namespace Spool
     {
         /// <summary>运行状态
         /// </summary>
-        public bool IsRunning { get; private set; } = false;
+        public bool IsRunning { get { return _isRunning == 1; } }
 
         /// <summary>配置信息
         /// </summary>
@@ -24,6 +25,8 @@ namespace Spool
 
         private readonly ILogger _logger;
         private readonly IFilePoolFactory _filePoolFactory;
+
+        private int _isRunning = 0;
 
         /// <summary>文件池集合
         /// </summary>
@@ -118,7 +121,7 @@ namespace Spool
         /// </summary>
         public void Start()
         {
-            if (IsRunning)
+            if (_isRunning == 1)
             {
                 _logger.LogInformation("SpoolPool已经正在运行,请不要重复启动!");
                 return;
@@ -145,19 +148,20 @@ namespace Spool
                 filePool.Start();
             }
 
-            IsRunning = true;
+            Interlocked.Exchange(ref _isRunning, 1);
         }
 
         /// <summary>关闭
         /// </summary>
         public void Shutdown()
         {
-            if (!IsRunning)
+            if (_isRunning == 0)
             {
                 _logger.LogInformation("SpoolPool已经关闭,请不要重复关闭!");
                 return;
             }
-            IsRunning = false;
+
+            Interlocked.Exchange(ref _isRunning, 0);
         }
 
 

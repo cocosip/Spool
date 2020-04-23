@@ -18,6 +18,7 @@ namespace Spool
     public class FilePool : IFilePool
     {
         private int _inFileWatcher = 0;
+        private int _isRunning = 0;
 
         private readonly ILogger _logger;
         private readonly IScheduleService _scheduleService;
@@ -29,7 +30,7 @@ namespace Spool
 
         /// <summary>是否正在运行
         /// </summary>
-        public bool IsRunning { get; private set; } = false;
+        public bool IsRunning { get { return _isRunning == 1; } }
 
         /// <summary>被取走的文件
         /// </summary>
@@ -50,7 +51,7 @@ namespace Spool
         /// </summary>
         public void Start()
         {
-            if (IsRunning)
+            if (_isRunning == 1)
             {
                 _logger.LogInformation("当前FilePool:'{0}',路径:{1},正在运行,请勿重复运行。", Option.Name, Option.Path);
                 return;
@@ -79,7 +80,7 @@ namespace Spool
                 StartScanFileWatcherTask();
             }
 
-            IsRunning = true;
+            Interlocked.Exchange(ref _isRunning, 1);
         }
 
 
@@ -87,7 +88,7 @@ namespace Spool
         /// </summary>
         public void Shutdown()
         {
-            if (!IsRunning)
+            if (_isRunning == 0)
             {
                 _logger.LogInformation("当前FilePool:'{0}',路径:{1},已停止,请勿重复操作。", Option.Name, Option.Path);
                 return;
@@ -104,7 +105,7 @@ namespace Spool
                 StopScanFileWatcherTask();
             }
 
-            IsRunning = false;
+            Interlocked.Exchange(ref _isRunning, 0);
         }
 
 
