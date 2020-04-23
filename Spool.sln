@@ -13,7 +13,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spool.Tests", "test\Spool.T
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{35BF42A1-B927-432D-AB47-844B383D9D03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spool.Demo", "samples\Spool.Demo\Spool.Demo.csproj", "{9525A81B-2A8D-4D18-9934-FD43D7BAE28F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spool.Demo", "samples\Spool.Demo\Spool.Demo.csproj", "{9525A81B-2A8D-4D18-9934-FD43D7BAE28F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{BA4EB35D-65A6-47A2-9C2E-703CD670DAE6}"
+	ProjectSection(SolutionItems) = preProject
+		build\common.props = build\common.props
+		build\credentials.cake = build\credentials.cake
+		build\packages.cake = build\packages.cake
+		build\parameters.cake = build\parameters.cake
+		build\paths.cake = build\paths.cake
+		build\util.cake = build\util.cake
+		build\version.cake = build\version.cake
+		build\version.props = build\version.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

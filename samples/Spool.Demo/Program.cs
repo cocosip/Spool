@@ -69,7 +69,7 @@ namespace Spool.Demo
 
         public static void WriteFileTest()
         {
-            var spoolPool = Provider.GetService<SpoolPool>();
+            var spoolPool = Provider.GetService<ISpoolPool>();
 
             for (int i = 0; i < FilePoolCount; i++)
             {
@@ -104,10 +104,11 @@ namespace Spool.Demo
 
         }
 
+    
 
         public static void GetFileTest()
         {
-            var spoolPool = Provider.GetService<SpoolPool>();
+            var spoolPool = Provider.GetService<ISpoolPool>();
             for (var i = 0; i < FilePoolCount; i++)
             {
                 var poolName = $"pool{i}";

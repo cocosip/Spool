@@ -40,11 +40,11 @@ namespace Spool
             services
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .Configure<SpoolOption>(configure)
-                .AddSingleton<SpoolPool>()
+                .AddSingleton<ISpoolPool, SpoolPool>()
                 .AddSingleton<ISpoolHost, SpoolHost>()
                 .AddSingleton<IdGenerator>()
                 .AddSingleton<IFilePoolFactory, FilePoolFactory>()
-                .AddScoped<FilePool>()
+                .AddScoped<IFilePool, FilePool>()
                 .AddScoped<FilePoolOption>()
                 .AddScoped<ITrainManager, TrainManager>()
                 .AddScoped<IFileWriterManager, FileWriterManager>()

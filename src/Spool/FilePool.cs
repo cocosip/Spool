@@ -15,7 +15,7 @@ namespace Spool
 {
     /// <summary>文件池
     /// </summary>
-    public class FilePool
+    public class FilePool : IFilePool
     {
         private int _inFileWatcher = 0;
 
@@ -29,7 +29,7 @@ namespace Spool
 
         /// <summary>是否正在运行
         /// </summary>
-        public bool IsRunning { get; private set; }
+        public bool IsRunning { get; private set; } = false;
 
         /// <summary>被取走的文件
         /// </summary>

@@ -12,7 +12,7 @@ namespace Spool
 {
     /// <summary>全局文件池
     /// </summary>
-    public class SpoolPool
+    public class SpoolPool : ISpoolPool
     {
         /// <summary>运行状态
         /// </summary>
@@ -27,7 +27,7 @@ namespace Spool
 
         /// <summary>文件池集合
         /// </summary>
-        private readonly ConcurrentDictionary<string, FilePool> _filePoolDict;
+        private readonly ConcurrentDictionary<string, IFilePool> _filePoolDict;
 
         /// <summary>ctor
         /// </summary>
@@ -37,7 +37,7 @@ namespace Spool
             Option = option.Value;
             _filePoolFactory = filePoolFactory;
 
-            _filePoolDict = new ConcurrentDictionary<string, FilePool>();
+            _filePoolDict = new ConcurrentDictionary<string, IFilePool>();
         }
 
         /// <summary>写文件
@@ -163,13 +163,13 @@ namespace Spool
 
         /// <summary>根据组名获取文件池
         /// </summary>
-        private FilePool GetFilePool(string poolName)
+        private IFilePool GetFilePool(string poolName)
         {
             if (poolName.IsNullOrWhiteSpace())
             {
                 poolName = Option.DefaultPool;
             }
-            if (!_filePoolDict.TryGetValue(poolName, out FilePool filePool))
+            if (!_filePoolDict.TryGetValue(poolName, out IFilePool filePool))
             {
                 throw new ArgumentException($"未找到名为'{poolName}' 的文件池,请检查配置.");
             }

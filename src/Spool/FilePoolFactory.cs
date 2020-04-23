@@ -38,13 +38,13 @@ namespace Spool
 
         /// <summary>创建文件池
         /// </summary>
-        public FilePool CreateFilePool(FilePoolDescriptor descriptor)
+        public IFilePool CreateFilePool(FilePoolDescriptor descriptor)
         {
             using (var scope = _host.Provider.CreateScope())
             {
                 var scopeOption = scope.ServiceProvider.GetService<FilePoolOption>();
                 SetScopeOption(scopeOption, descriptor);
-                return scope.ServiceProvider.GetService<FilePool>();
+                return scope.ServiceProvider.GetService<IFilePool>();
             }
         }
 

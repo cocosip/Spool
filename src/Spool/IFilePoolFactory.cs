@@ -10,7 +10,7 @@
 
         /// <summary>创建文件池
         /// </summary>
-        FilePool CreateFilePool(FilePoolDescriptor descriptor);
+        IFilePool CreateFilePool(FilePoolDescriptor descriptor);
 
         /// <summary>根据FilePoolDescriptor 设置FilePoolOption的值
         /// </summary>

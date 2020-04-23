@@ -20,7 +20,7 @@ namespace Spool
             configure?.Invoke(option);
 
             //运行SpoolPool
-            var spoolPool = provider.GetService<SpoolPool>();
+            var spoolPool = provider.GetService<ISpoolPool>();
             spoolPool.Start();
 
             return provider;
