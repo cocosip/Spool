@@ -32,6 +32,10 @@ namespace Spool
         /// </summary>
         public bool IsRunning { get { return _isRunning == 1; } }
 
+        /// <summary>归还文件事件
+        /// </summary>
+        public event EventHandler<ReturnFileEventArgs> OnFileReturn;
+
         /// <summary>被取走的文件
         /// </summary>
         private readonly ConcurrentDictionary<string, SpoolFileFuture> _takeFileDict;
@@ -150,15 +154,6 @@ namespace Spool
             //是否启动自动归还功能
             if (Option.EnableAutoReturn)
             {
-                //foreach (var spoolFile in spoolFiles)
-                //{
-                //    var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
-                //    if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
-                //    {
-                //        _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
-                //    }
-                //}
-
                 foreach (var spoolFile in spoolFiles)
                 {
                     var key = spoolFile.GenerateCode();
@@ -174,11 +169,8 @@ namespace Spool
                             _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
                         }
                     }
-
                 }
-
             }
-
             return spoolFiles.ToArray();
         }
 
@@ -199,6 +191,12 @@ namespace Spool
             {
                 TryRemoveTakeFiles(spoolFiles);
             }
+
+            OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
+            {
+                FilePoolName = Option.Name,
+                SpoolFiles = spoolFiles
+            });
         }
 
         /// <summary>释放文件

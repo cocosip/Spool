@@ -19,6 +19,22 @@ namespace Spool
         /// </summary>
         public bool IsRunning { get { return _isRunning == 1; } }
 
+        /// <summary>写入文件事件
+        /// </summary>
+        public event EventHandler<WriteFileEventArgs> OnFileWrite;
+
+        /// <summary>取走文件事件
+        /// </summary>
+        public event EventHandler<GetFileEventArgs> OnFileGet;
+
+        /// <summary>删除文件事件
+        /// </summary>
+        public event EventHandler<ReleaseFileEventArgs> OnFileRelease;
+
+        /// <summary>归还文件事件
+        /// </summary>
+        public event EventHandler<ReturnFileEventArgs> OnFileReturn;
+
         /// <summary>配置信息
         /// </summary>
         public SpoolOption Option { get; private set; }
@@ -53,7 +69,14 @@ namespace Spool
         {
             //获取文件池
             var filePool = GetFilePool(poolName);
-            return await filePool.WriteFileAsync(stream, fileExt);
+            var spoolFile = await filePool.WriteFileAsync(stream, fileExt);
+
+            OnFileWrite?.Invoke(this, new WriteFileEventArgs()
+            {
+                FilePoolName = filePool.Option.Name,
+                SpoolFile = spoolFile
+            });
+            return spoolFile;
         }
 
         /// <summary>写文件
@@ -93,7 +116,14 @@ namespace Spool
         public SpoolFile[] Get(int count, string poolName = "")
         {
             var filePool = GetFilePool(poolName);
-            return filePool.GetFiles(count);
+            var spoolFiles = filePool.GetFiles(count);
+            OnFileGet?.Invoke(this, new GetFileEventArgs()
+            {
+                FilePoolName = filePool.Option.Name,
+                SpoolFiles = spoolFiles,
+                GetFileCount = count
+            });
+            return spoolFiles;
         }
 
         /// <summary>归还数据
@@ -104,6 +134,12 @@ namespace Spool
         {
             var filePool = GetFilePool(poolName);
             filePool.ReturnFiles(spoolFiles);
+
+            OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
+            {
+                FilePoolName = filePool.Option.Name,
+                SpoolFiles = spoolFiles
+            });
         }
 
         /// <summary>释放文件
@@ -115,6 +151,11 @@ namespace Spool
         {
             var filePool = GetFilePool(poolName);
             filePool.ReleaseFiles(spoolFiles);
+            OnFileRelease?.Invoke(this, new ReleaseFileEventArgs()
+            {
+                FilePoolName = filePool.Option.Name,
+                SpoolFiles = spoolFiles
+            });
         }
 
         /// <summary>运行
@@ -144,6 +185,18 @@ namespace Spool
                 if (!_filePoolDict.TryAdd(descriptor.Name, filePool))
                 {
                     _logger.LogWarning("添加文件池FilePool到集合失败,文件池名:{0},文件池路径:{1}", descriptor.Name, descriptor.Path);
+                }
+                //判断当前是否有绑定归还事件
+                if (OnFileReturn != null)
+                {
+                    filePool.OnFileReturn += (o, e) =>
+                    {
+                        OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
+                        {
+                            FilePoolName = e.FilePoolName,
+                            SpoolFiles = e.SpoolFiles
+                        });
+                    };
                 }
                 filePool.Start();
             }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -14,6 +15,22 @@ namespace Spool
         /// <summary>配置信息
         /// </summary>
         SpoolOption Option { get; }
+
+        /// <summary>写入文件事件
+        /// </summary>
+        event EventHandler<WriteFileEventArgs> OnFileWrite;
+
+        /// <summary>取走文件事件
+        /// </summary>
+        event EventHandler<GetFileEventArgs> OnFileGet;
+
+        /// <summary>删除文件事件
+        /// </summary>
+        event EventHandler<ReleaseFileEventArgs> OnFileRelease;
+
+        /// <summary>归还文件事件
+        /// </summary>
+        event EventHandler<ReturnFileEventArgs> OnFileReturn;
 
         /// <summary>写文件
         /// </summary>

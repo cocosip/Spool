@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Spool
@@ -14,6 +15,10 @@ namespace Spool
         /// <summary>是否正在运行
         /// </summary>
         bool IsRunning { get; }
+
+        /// <summary>归还文件事件
+        /// </summary>
+        event EventHandler<ReturnFileEventArgs> OnFileReturn;
 
         /// <summary>运行文件池
         /// </summary>
