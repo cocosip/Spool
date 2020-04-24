@@ -36,7 +36,8 @@ namespace Spool
         /// </summary>
         private readonly ConcurrentDictionary<string, SpoolFileFuture> _takeFileDict;
 
-
+        /// <summary>Ctor
+        /// </summary>
         public FilePool(ILogger<FilePool> logger, IScheduleService scheduleService, ITrainManager trainManager, FilePoolOption option)
         {
             _logger = logger;

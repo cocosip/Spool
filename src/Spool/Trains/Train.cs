@@ -66,6 +66,8 @@ namespace Spool.Trains
         private readonly IdGenerator _idGenerator;
         private readonly IFileWriterManager _fileWriterManager;
 
+        /// <summary>Ctor
+        /// </summary>
         public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, TrainOption trainOption)
         {
             _logger = logger;

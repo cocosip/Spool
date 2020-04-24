@@ -9,10 +9,14 @@ namespace Spool.Writers
     /// </summary>
     public class FileWriter
     {
+        /// <summary>写入器Id
+        /// </summary>
         public string Id { get; }
         private readonly ILogger _logger;
         private readonly FilePoolOption _option;
 
+        /// <summary>Ctor
+        /// </summary>
         public FileWriter(ILogger<FileWriter> logger, FilePoolOption option)
         {
             _logger = logger;

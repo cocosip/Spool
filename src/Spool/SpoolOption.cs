@@ -14,6 +14,8 @@ namespace Spool
         /// </summary>
         public List<FilePoolDescriptor> FilePools { get; set; }
 
+        /// <summary>Ctor
+        /// </summary>
         public SpoolOption()
         {
             FilePools = new List<FilePoolDescriptor>();

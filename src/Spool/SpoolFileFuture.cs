@@ -25,6 +25,8 @@ namespace Spool
             BeginTime = DateTime.Now;
         }
 
+        /// <summary>Ctor
+        /// </summary>
         public SpoolFileFuture(SpoolFile file, int timeoutSeconds)
         {
             BeginTime = DateTime.Now;
