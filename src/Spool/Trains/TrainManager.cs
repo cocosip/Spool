@@ -270,84 +270,92 @@ namespace Spool.Trains
         /// </summary>
         private void BindDefaultEvent(Train train)
         {
-            train.OnDelete += (s, e) =>
-            {
-                if (_isTrainChange == 1)
-                {
-                    _manualResetEventSlim.Wait();
-                }
-
-                try
-                {
-                    Interlocked.Exchange(ref _isTrainChange, 1);
-                    //从集合中删除
-                    if (_trainDict.TryRemove(e.Info.Index, out _))
-                    {
-                        //删除序列文件
-                        DirectoryHelper.DeleteIfExist(e.Info.Path);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("删除序列失败,文件池:'{0}',索引:'{1}'.", _option.Name, e.Info.Index);
-                    }
-
-                }
-                finally
-                {
-                    Interlocked.Exchange(ref _isTrainChange, 0);
-                    _manualResetEventSlim.Set();
-                }
-            };
-
-            //写满事件
-            train.OnWriteOver += (s, e) =>
-            {
-                if (_isTrainChange == 1)
-                {
-                    _manualResetEventSlim.Wait();
-                }
-
-                try
-                {
-                    Interlocked.Exchange(ref _isTrainChange, 1);
-                    if (_trainDict.TryGetValue(e.Info.Index, out Train train))
-                    {
-                        //如果是可读可写,就变成只读
-                        if (train.TrainType == TrainType.ReadWrite || train.TrainType == TrainType.Write)
-                        {
-                            train.ChangeType(TrainType.Read);
-                        }
-                        else
-                        {
-                            _logger.LogInformation("当前序列变成只读,但是原先的类型不为'ReadWrite'或者不为'Write'.");
-                        }
-                        //创建新的写序列
-                        var nextIndex = GetLatestNextIndex();
-                        var newWriteTrain = CreateTrain(nextIndex);
-                        _trainDict.TryAdd(newWriteTrain.Index, newWriteTrain);
-                        //if (!_trainDict.TryAdd(newWriteTrain.Index, newWriteTrain))
-                        //{
-                        //    throw new Exception($"添加新序列出错,待添加序列索引:{newWriteTrain.Index}");
-                        //}
-                        //设置为写
-                        newWriteTrain.ChangeType(TrainType.Write);
-
-
-                    }
-                    else
-                    {
-                        _logger.LogInformation("序列写满时,未找到该序列!");
-                    }
-
-                }
-                finally
-                {
-                    Interlocked.Exchange(ref _isTrainChange, 0);
-                    _manualResetEventSlim.Set();
-                }
-
-            };
+            train.OnDelete += Train_OnDelete;
+            train.OnWriteOver += Train_OnWriteOver;
         }
 
+
+        private void Train_OnWriteOver(object sender, TrainWriteOverEventArgs e)
+        {
+            if (_isTrainChange == 1)
+            {
+                _manualResetEventSlim.Wait();
+            }
+
+            try
+            {
+                Interlocked.Exchange(ref _isTrainChange, 1);
+                if (_trainDict.TryGetValue(e.Info.Index, out Train train))
+                {
+                    //如果是可读可写,就变成只读
+                    if (train.TrainType == TrainType.ReadWrite || train.TrainType == TrainType.Write)
+                    {
+                        train.ChangeType(TrainType.Read);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("当前序列变成只读,但是原先的类型不为'ReadWrite'或者不为'Write'.");
+                    }
+                    //创建新的写序列
+                    var nextIndex = GetLatestNextIndex();
+                    var newWriteTrain = CreateTrain(nextIndex);
+                    _trainDict.TryAdd(newWriteTrain.Index, newWriteTrain);
+                    //if (!_trainDict.TryAdd(newWriteTrain.Index, newWriteTrain))
+                    //{
+                    //    throw new Exception($"添加新序列出错,待添加序列索引:{newWriteTrain.Index}");
+                    //}
+                    //设置为写
+                    newWriteTrain.ChangeType(TrainType.Write);
+
+
+                }
+                else
+                {
+                    _logger.LogInformation("序列写满时,未找到该序列!");
+                }
+
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isTrainChange, 0);
+                _manualResetEventSlim.Set();
+            }
+
+        }
+
+        private void Train_OnDelete(object sender, TrainDeleteEventArgs e)
+        {
+            if (_isTrainChange == 1)
+            {
+                _manualResetEventSlim.Wait();
+            }
+
+            try
+            {
+                Interlocked.Exchange(ref _isTrainChange, 1);
+                //从集合中删除
+                if (_trainDict.TryRemove(e.Info.Index, out Train train))
+                {
+                    //删除序列文件
+                    DirectoryHelper.DeleteIfExist(e.Info.Path);
+                }
+                else
+                {
+                    _logger.LogInformation("删除序列失败,文件池:'{0}',索引:'{1}'.", _option.Name, e.Info.Index);
+                }
+                //解绑事件,避免内存泄露
+                if (train != null)
+                {
+                    train.OnDelete += Train_OnDelete;
+                    train.OnWriteOver += Train_OnWriteOver;
+                }
+
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isTrainChange, 0);
+                _manualResetEventSlim.Set();
+            }
+        }
     }
 }
