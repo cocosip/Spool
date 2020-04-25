@@ -36,6 +36,13 @@ namespace Spool.Trains
         /// </summary>
         public bool Initialized { get; private set; } = false;
 
+        /// <summary>当前序列下待处理的数量
+        /// </summary>
+        public int PendingCount { get { return _pendingQueue.Count; } }
+
+        /// <summary>当前序列下被取走的数量
+        /// </summary>
+        public int ProgressingCount { get { return _progressingDict.Count; } }
 
         /// <summary>当前序列下文件的全部索引
         /// </summary>

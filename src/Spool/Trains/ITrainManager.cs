@@ -1,4 +1,7 @@
-﻿namespace Spool.Trains
+﻿using System;
+using System.Collections.Generic;
+
+namespace Spool.Trains
 {
     /// <summary>序列管理器
     /// </summary>
@@ -23,5 +26,9 @@
         /// <summary>根据索引号获取序列
         /// </summary>
         Train GetTrainByIndex(int index);
+
+        /// <summary>获取全部的序列
+        /// </summary>
+        List<Train> GetTrains(Func<Train, bool> predicate);
     }
 }

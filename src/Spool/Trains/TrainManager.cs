@@ -168,6 +168,14 @@ namespace Spool.Trains
             return train;
         }
 
+        /// <summary>获取全部的序列
+        /// </summary>
+        public List<Train> GetTrains(Func<Train, bool> predicate)
+        {
+            return _trainDict.Values.Where(predicate).ToList();
+        }
+
+        #region Private method
         /// <summary>创建序列
         /// </summary>
         private Train CreateTrain(int index)
@@ -187,7 +195,6 @@ namespace Spool.Trains
                 return train;
             }
         }
-
 
         /// <summary>加载已经存在的序列
         /// </summary>
@@ -209,7 +216,6 @@ namespace Spool.Trains
             }
             return trains;
         }
-
 
         /// <summary>初始化序列
         /// </summary>
@@ -273,7 +279,6 @@ namespace Spool.Trains
             train.OnDelete += Train_OnDelete;
             train.OnWriteOver += Train_OnWriteOver;
         }
-
 
         private void Train_OnWriteOver(object sender, TrainWriteOverEventArgs e)
         {
@@ -357,5 +362,6 @@ namespace Spool.Trains
                 _manualResetEventSlim.Set();
             }
         }
+        #endregion
     }
 }

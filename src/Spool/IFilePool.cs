@@ -56,5 +56,13 @@ namespace Spool
         /// <summary>释放文件
         /// </summary>
         void ReleaseFiles(params SpoolFile[] spoolFiles);
+
+        /// <summary>获取文件数量
+        /// </summary>
+        int GetPendingCount();
+
+        /// <summary>获取取走的数量
+        /// </summary>
+        int GetProcessingCount();
     }
 }

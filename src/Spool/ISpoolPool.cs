@@ -75,6 +75,14 @@ namespace Spool
 
         void Release(string poolName = "", params SpoolFile[] spoolFiles);
 
+        /// <summary>获取文件数量
+        /// </summary>
+        int GetPendingCount(string poolName = "");
+
+        /// <summary>获取取走的数量
+        /// </summary>
+        public int GetProcessingCount(string poolName = "");
+
         /// <summary>运行
         /// </summary>
         void Start();

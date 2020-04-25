@@ -158,6 +158,22 @@ namespace Spool
             });
         }
 
+        /// <summary>获取文件数量
+        /// </summary>
+        public int GetPendingCount(string poolName = "")
+        {
+            var filePool = GetFilePool(poolName);
+            return filePool.GetPendingCount();
+        }
+
+        /// <summary>获取取走的数量
+        /// </summary>
+        public int GetProcessingCount(string poolName = "")
+        {
+            var filePool = GetFilePool(poolName);
+            return filePool.GetPendingCount();
+        }
+
         /// <summary>运行
         /// </summary>
         public void Start()
@@ -216,7 +232,6 @@ namespace Spool
 
             Interlocked.Exchange(ref _isRunning, 0);
         }
-
 
         /// <summary>根据组名获取文件池
         /// </summary>

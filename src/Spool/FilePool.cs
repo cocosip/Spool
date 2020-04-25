@@ -88,7 +88,6 @@ namespace Spool
             Interlocked.Exchange(ref _isRunning, 1);
         }
 
-
         /// <summary>关闭文件池
         /// </summary>
         public void Shutdown()
@@ -112,7 +111,6 @@ namespace Spool
 
             Interlocked.Exchange(ref _isRunning, 0);
         }
-
 
         /// <summary>写文件
         /// </summary>
@@ -216,6 +214,22 @@ namespace Spool
             }
         }
 
+        /// <summary>获取文件数量
+        /// </summary>
+        public int GetPendingCount()
+        {
+            var trains = _trainManager.GetTrains(x => x.TrainType == TrainType.Read || x.TrainType == TrainType.ReadWrite);
+            return trains.Sum(x => x.PendingCount);
+        }
+
+        /// <summary>获取取走的数量
+        /// </summary>
+        public int GetProcessingCount()
+        {
+            return _takeFileDict.Count;
+        }
+
+        #region Private method
         /// <summary>初始化
         /// </summary>
         private void Initialize()
@@ -362,6 +376,7 @@ namespace Spool
             }
 
         }
+        #endregion
 
 
 
