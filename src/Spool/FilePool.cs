@@ -298,10 +298,8 @@ namespace Spool
         {
             foreach (var spoolFile in spoolFiles)
             {
-                if (!_takeFileDict.TryRemove(spoolFile.GenerateCode(), out SpoolFileFuture _))
-                {
-                    _logger.LogWarning("移除取走的文件失败,{0}", spoolFile);
-                }
+                //从被取走的队列中移除元素的时候可能会失败,因为定时任务可能已经移除该超时的文件
+                _takeFileDict.TryRemove(spoolFile.GenerateCode(), out SpoolFileFuture _);
             }
         }
 
