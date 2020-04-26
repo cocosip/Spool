@@ -20,11 +20,11 @@ namespace Spool.Utility
 
         /// <summary>如果文件夹存在就删除
         /// </summary>
-        public static bool DeleteIfExist(string directory)
+        public static bool DeleteIfExist(string directory, bool recursive = false)
         {
             if (Directory.Exists(directory))
             {
-                Directory.Delete(directory);
+                Directory.Delete(directory, recursive);
                 return true;
             }
             return false;
