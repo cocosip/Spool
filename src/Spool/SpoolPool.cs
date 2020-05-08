@@ -171,7 +171,7 @@ namespace Spool
         public int GetProcessingCount(string poolName = "")
         {
             var filePool = GetFilePool(poolName);
-            return filePool.GetPendingCount();
+            return filePool.GetProcessingCount();
         }
 
         /// <summary>运行
