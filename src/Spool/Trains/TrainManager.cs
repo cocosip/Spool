@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Transactions;
 
 namespace Spool.Trains
 {
@@ -163,7 +164,7 @@ namespace Spool.Trains
 
             if (!_trainDict.TryGetValue(index, out Train train))
             {
-                throw new Exception($"序列:'{index}'不存在!");
+                _logger.LogWarning("获取序列为'{0}'的序列失败,该序列不存在或者已经被释放。", index);
             }
             return train;
         }
@@ -346,7 +347,7 @@ namespace Spool.Trains
                 }
                 else
                 {
-                    _logger.LogInformation("删除序列失败,文件池:'{0}',索引:'{1}'.", _option.Name, e.Info.Index);
+                    _logger.LogWarning("删除序列失败,文件池:'{0}',索引:'{1}'.", _option.Name, e.Info.Index);
                 }
                 //解绑事件,避免内存泄露
                 if (train != null)

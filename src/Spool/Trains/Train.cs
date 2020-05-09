@@ -209,7 +209,7 @@ namespace Spool.Trains
                 }
                 else
                 {
-                    _logger.LogDebug("归还数据文件不存在,组:'{0}',序列索引:'{1}',文件路径:'{2}'.", spoolFile.FilePoolName, spoolFile.TrainIndex, spoolFile.Path);
+                    _logger.LogDebug("归还数据文件不存在,该文件可能已经被释放。组:'{0}',序列索引:'{1}',文件路径:'{2}'.", spoolFile.FilePoolName, spoolFile.TrainIndex, spoolFile.Path);
                 }
             }
         }

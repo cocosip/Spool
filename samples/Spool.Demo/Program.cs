@@ -99,11 +99,7 @@ namespace Spool.Demo
                     }
                 });
             }
-
-
-
         }
-
     
 
         public static void GetFileTest()

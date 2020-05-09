@@ -181,7 +181,14 @@ namespace Spool
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
-                train.ReturnFiles(groupSpoolFile.ToArray());
+                if (train != null)
+                {
+                    train.ReturnFiles(groupSpoolFile.ToArray());
+                }
+                else
+                {
+                    _logger.LogWarning("归还数据时,未找到序列号为:'{0}'的序列,该序列可能已经被释放。", groupSpoolFile.Key);
+                }
             }
 
             //自动归还,需要移除文件
@@ -205,7 +212,14 @@ namespace Spool
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
-                train.ReleaseFiles(groupSpoolFile.ToArray());
+                if (train != null)
+                {
+                    train.ReleaseFiles(groupSpoolFile.ToArray());
+                }
+                else
+                {
+                    _logger.LogWarning("释放数据时,未找到序列号为:'{0}'的序列,该序列可能已经被释放。", groupSpoolFile.Key);
+                }
             }
 
             if (Option.EnableAutoReturn)
