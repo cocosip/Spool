@@ -126,16 +126,51 @@ namespace Spool.Trains
             {
                 _manualResetEventSlim.Wait();
             }
-            var readTrain = _trainDict.Values.FirstOrDefault(x => (x.TrainType == TrainType.Read && !x.IsEmpty()) || x.TrainType == TrainType.ReadWrite);
 
+            //先获取可读的序列
+            var readTrain = _trainDict.Values.FirstOrDefault(x => x.TrainType == TrainType.Read && !x.IsEmpty());
             if (readTrain == null)
             {
-                //获取下一个
+                //获取一个默认的序列
                 readTrain = _trainDict.Values.OrderBy(x => x.Index).FirstOrDefault(x => x.TrainType == TrainType.Default);
+                //如果获取的默认序列不为null,就加载数据
+                if (readTrain != null)
+                {
+                    if (_isTrainChange == 1)
+                    {
+                        _manualResetEventSlim.Wait();
+                    }
+                    try
+                    {
+                        Interlocked.Exchange(ref _isTrainChange, 1);
+                        //状态变成可读
+                        readTrain.ChangeType(TrainType.Read);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "将'Default'类型序列转换成'Read'类型序列出错了,异常信息:{0}.", ex.Message);
+                    }
+                    finally
+                    {
+                        _manualResetEventSlim.Set();
+                        Interlocked.Exchange(ref _isTrainChange, 0);
+                    }
+                }
+            }
+
+            //获取可读可写的
+            if (readTrain == null)
+            {
+                readTrain = _trainDict.Values.FirstOrDefault(x => x.TrainType == TrainType.ReadWrite);
             }
 
             if (readTrain == null)
             {
+                if (_isTrainChange == 1)
+                {
+                    _manualResetEventSlim.Wait();
+                }
+                //当没有任何默认序列时,就获取写入序列,把他变成可读可写
                 try
                 {
                     Interlocked.Exchange(ref _isTrainChange, 1);
@@ -147,8 +182,14 @@ namespace Spool.Trains
                 }
                 finally
                 {
+                    _manualResetEventSlim.Set();
                     Interlocked.Exchange(ref _isTrainChange, 0);
                 }
+            }
+            
+            if (readTrain == null)
+            {
+                throw new ArgumentException("无法获取任何的可读序列!");
             }
             return readTrain;
         }
@@ -312,8 +353,6 @@ namespace Spool.Trains
                     //}
                     //设置为写
                     newWriteTrain.ChangeType(TrainType.Write);
-
-
                 }
                 else
                 {
@@ -323,8 +362,8 @@ namespace Spool.Trains
             }
             finally
             {
-                Interlocked.Exchange(ref _isTrainChange, 0);
                 _manualResetEventSlim.Set();
+                Interlocked.Exchange(ref _isTrainChange, 0);
             }
 
         }
@@ -359,8 +398,8 @@ namespace Spool.Trains
             }
             finally
             {
-                Interlocked.Exchange(ref _isTrainChange, 0);
                 _manualResetEventSlim.Set();
+                Interlocked.Exchange(ref _isTrainChange, 0);
             }
         }
         #endregion
