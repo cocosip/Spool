@@ -48,7 +48,7 @@ namespace Spool
                 .AddScoped<FilePoolOption>()
                 .AddScoped<ITrainManager, TrainManager>()
                 .AddScoped<IFileWriterManager, FileWriterManager>()
-                .AddScoped<FileWriter>()
+                .AddScoped<IFileWriter, FileWriter>()
                 .AddScoped<Train>()
                 .AddScoped<TrainOption>();
             return services;

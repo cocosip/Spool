@@ -12,9 +12,9 @@
         /// </summary>
         IFilePool CreateFilePool(FilePoolDescriptor descriptor);
 
-        /// <summary>根据FilePoolDescriptor 设置FilePoolOption的值
-        /// </summary>
-        void SetScopeOption(FilePoolOption scopeOption, FilePoolDescriptor descriptor);
+        ///// <summary>根据FilePoolDescriptor 设置FilePoolOption的值
+        ///// </summary>
+        //void SetScopeOption(FilePoolOption scopeOption, FilePoolDescriptor descriptor);
 
         /// <summary>给FilePoolOption赋值
         /// </summary>

@@ -11,7 +11,7 @@ namespace Spool.Writers
     {
         private int _fileWriterCount = 0;
         private readonly int _maxFileWriterCount = int.MaxValue;
-        private readonly ConcurrentStack<FileWriter> _fileWriterStack;
+        private readonly ConcurrentStack<IFileWriter> _fileWriterStack;
         private readonly AutoResetEvent _autoResetEvent;
         private readonly ILogger _logger;
         private readonly ISpoolHost _host;
@@ -33,16 +33,16 @@ namespace Spool.Writers
                 _maxFileWriterCount = _option.MaxFileWriterCount;
             }
 
-            _fileWriterStack = new ConcurrentStack<FileWriter>();
+            _fileWriterStack = new ConcurrentStack<IFileWriter>();
             _autoResetEvent = new AutoResetEvent(false);
         }
 
 
         /// <summary>获取一个文件写入器
         /// </summary>
-        public FileWriter Get()
+        public IFileWriter Get()
         {
-            if (!_fileWriterStack.TryPop(out FileWriter fileWriter))
+            if (!_fileWriterStack.TryPop(out IFileWriter fileWriter))
             {
                 //未在集合中获取,则判断能否新建
                 if (_fileWriterCount < _maxFileWriterCount)
@@ -61,7 +61,7 @@ namespace Spool.Writers
 
         /// <summary>归还一个文件写入器
         /// </summary>
-        public void Return(FileWriter fileWriter)
+        public void Return(IFileWriter fileWriter)
         {
             if (fileWriter != null)
             {
@@ -73,11 +73,11 @@ namespace Spool.Writers
 
         /// <summary>创建文件写入器
         /// </summary>
-        private FileWriter CreateWriter()
+        private IFileWriter CreateWriter()
         {
             using (var scope = _host.Provider.CreateScope())
             {
-                var fileWriter = scope.ServiceProvider.GetService<FileWriter>();
+                var fileWriter = scope.ServiceProvider.GetService<IFileWriter>();
                 var option = scope.ServiceProvider.GetService<FilePoolOption>();
 
                 _filePoolFactory.SetScopeOption(option, _option);

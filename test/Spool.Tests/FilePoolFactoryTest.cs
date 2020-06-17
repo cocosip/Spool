@@ -95,8 +95,8 @@ namespace Spool.Tests
             Assert.Equal(descriptor.ScanFileWatcherMillSeconds, option.ScanFileWatcherMillSeconds);
             Assert.Equal(descriptor.ScanReturnFileMillSeconds, option.ScanReturnFileMillSeconds);
 
-            DirectoryHelper.DeleteIfExist(descriptor.Path, true);
-            DirectoryHelper.DeleteIfExist(descriptor.FileWatcherPath, true);
+            //DirectoryHelper.DeleteIfExist(descriptor.Path, true);
+            //DirectoryHelper.DeleteIfExist(descriptor.FileWatcherPath, true);
         }
 
     }

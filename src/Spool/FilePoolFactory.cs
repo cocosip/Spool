@@ -51,7 +51,7 @@ namespace Spool
 
         /// <summary>根据FilePoolDescriptor 设置FilePoolOption的值
         /// </summary>
-        public void SetScopeOption(FilePoolOption scopeOption, FilePoolDescriptor descriptor)
+        private void SetScopeOption(FilePoolOption scopeOption, FilePoolDescriptor descriptor)
         {
             scopeOption.Name = descriptor.Name;
             scopeOption.Path = descriptor.Path;

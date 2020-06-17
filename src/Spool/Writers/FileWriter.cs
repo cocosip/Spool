@@ -7,7 +7,7 @@ namespace Spool.Writers
 {
     /// <summary>文件写入器
     /// </summary>
-    public class FileWriter
+    public class FileWriter : IFileWriter
     {
         /// <summary>写入器Id
         /// </summary>

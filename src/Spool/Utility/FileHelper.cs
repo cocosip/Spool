@@ -4,11 +4,11 @@ namespace Spool.Utility
 {
     /// <summary>FileHelper
     /// </summary>
-    public static class FileHelper
+    internal static class FileHelper
     {
         /// <summary>If file exist,delete the file.
         /// </summary>
-        public static bool DeleteIfExists(string filePath)
+        internal static bool DeleteIfExists(string filePath)
         {
             if (File.Exists(filePath))
             {

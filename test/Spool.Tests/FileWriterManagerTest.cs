@@ -34,7 +34,7 @@ namespace Spool.Tests
             FileWriter fileWriter1 = null;
             using (var scope = host.Provider.CreateScope())
             {
-                var fileWriter = scope.ServiceProvider.GetService<FileWriter>();
+                var fileWriter = scope.ServiceProvider.GetService<IFileWriter>();
                 var option = scope.ServiceProvider.GetService<FilePoolOption>();
                 option.Name = descriptor1.Name;
                 option.Path = descriptor1.Path;

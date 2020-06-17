@@ -1,4 +1,6 @@
-﻿using Spool.Utility;
+﻿using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Spool.Extensions
 {
@@ -10,8 +12,13 @@ namespace Spool.Extensions
         /// </summary>
         public static string GenerateCode(this SpoolFile file)
         {
-            //return file.Path;
-            return SHAUtil.GetHex16StringSHA1Hash($"{file.FilePoolName}{file.TrainIndex}{file.Path}");
+            var source = $"{file.FilePoolName}{file.TrainIndex}{file.Path}";
+            var sourceBytes = Encoding.UTF8.GetBytes(source);
+            using (var sha1 = SHA1.Create())
+            {
+                var hashBuffer = sha1.ComputeHash(sourceBytes);
+                return hashBuffer.Aggregate("", (current, b) => current + b.ToString("X2"));
+            }
         }
     }
 }

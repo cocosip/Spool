@@ -7,12 +7,11 @@
 
         /// <summary>获取一个文件写入器
         /// </summary>
-        FileWriter Get();
+        IFileWriter Get();
 
         /// <summary>归还一个文件写入器
         /// </summary>
-        void Return(FileWriter fileWriter);
-
+        void Return(IFileWriter fileWriter);
 
     }
 }
