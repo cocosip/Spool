@@ -14,7 +14,7 @@ namespace Spool.Trains
 {
     /// <summary>序列
     /// </summary>
-    public class Train
+    public class Train : ITrain
     {
         /// <summary>序列的索引
         /// </summary>
@@ -71,16 +71,16 @@ namespace Spool.Trains
         private readonly ILogger _logger;
         private readonly FilePoolOption _option;
         private readonly IdGenerator _idGenerator;
-        private readonly IFileWriterManager _fileWriterManager;
+        private readonly IFileWriterPool _fileWriterPool;
 
         /// <summary>Ctor
         /// </summary>
-        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterManager fileWriterManager, TrainOption trainOption)
+        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterPool fileWriterPool, TrainOption trainOption)
         {
             _logger = logger;
             _option = option;
             _idGenerator = idGenerator;
-            _fileWriterManager = fileWriterManager;
+            _fileWriterPool = fileWriterPool;
 
             Index = trainOption.Index;
             Name = TrainUtil.GenerateTrainName(Index);
@@ -118,7 +118,7 @@ namespace Spool.Trains
                 FilePoolName = _option.Name,
                 TrainIndex = Index
             };
-            var fileWriter = _fileWriterManager.Get();
+            var fileWriter = _fileWriterPool.Get();
             try
             {
 
@@ -150,7 +150,7 @@ namespace Spool.Trains
             }
             finally
             {
-                _fileWriterManager.Return(fileWriter);
+                _fileWriterPool.Return(fileWriter);
                 //流释放
                 stream?.Close();
                 stream?.Dispose();

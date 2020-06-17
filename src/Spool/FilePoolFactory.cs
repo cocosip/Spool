@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Spool
 {
@@ -6,18 +7,18 @@ namespace Spool
     /// </summary>
     public class FilePoolFactory : IFilePoolFactory
     {
-        private readonly ISpoolHost _host;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>Ctor
         /// </summary>
-        public FilePoolFactory(ISpoolHost host)
+        public FilePoolFactory(IServiceProvider serviceProvider)
         {
-            _host = host;
+            _serviceProvider = serviceProvider;
         }
 
         /// <summary>根据文件池描述生成文件池选项
         /// </summary>
-        public FilePoolOption BuildOption(FilePoolDescriptor descriptor)
+        public FilePoolOption CreateOption(FilePoolDescriptor descriptor)
         {
             var option = new FilePoolOption()
             {
@@ -27,6 +28,7 @@ namespace Spool
                 FileWatcherPath = descriptor.FileWatcherPath,
                 ScanFileWatcherMillSeconds = descriptor.ScanFileWatcherMillSeconds,
                 MaxFileWriterCount = descriptor.MaxFileWriterCount,
+                ConcurrentFileWriterCount = descriptor.ConcurrentFileWriterCount,
                 WriteBufferSize = descriptor.WriteBufferSize,
                 TrainMaxFileCount = descriptor.TrainMaxFileCount,
                 EnableAutoReturn = descriptor.EnableAutoReturn,
@@ -40,7 +42,7 @@ namespace Spool
         /// </summary>
         public IFilePool CreateFilePool(FilePoolDescriptor descriptor)
         {
-            using (var scope = _host.Provider.CreateScope())
+            using (var scope = _serviceProvider.CreateScope())
             {
                 var scopeOption = scope.ServiceProvider.GetService<FilePoolOption>();
                 SetScopeOption(scopeOption, descriptor);
@@ -57,6 +59,7 @@ namespace Spool
             scopeOption.Path = descriptor.Path;
 
             scopeOption.MaxFileWriterCount = descriptor.MaxFileWriterCount;
+            scopeOption.ConcurrentFileWriterCount = descriptor.ConcurrentFileWriterCount;
             scopeOption.WriteBufferSize = descriptor.WriteBufferSize;
             scopeOption.TrainMaxFileCount = descriptor.TrainMaxFileCount;
 

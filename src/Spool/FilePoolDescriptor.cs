@@ -14,7 +14,11 @@
 
         /// <summary>最大的写入数(当数据为0时不限制)
         /// </summary>
-        public int MaxFileWriterCount { get; set; } = 0;
+        public int MaxFileWriterCount { get; set; } = 1000;
+
+        /// <summary>文件写入器的并发线程数
+        /// </summary>
+        public int ConcurrentFileWriterCount { get; set; } = 3;
 
         /// <summary>写入文件缓存大小
         /// </summary>
@@ -47,5 +51,6 @@
         /// <summary>自动归还时间秒(秒)
         /// </summary>
         public int AutoReturnSeconds { get; set; }
+
     }
 }

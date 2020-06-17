@@ -1,10 +1,4 @@
-﻿using Spool.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-
-namespace Spool.Utility
+﻿namespace Spool.Utility
 {
     /// <summary>Path Util
     /// </summary>
@@ -16,7 +10,7 @@ namespace Spool.Utility
         /// <returns></returns>
         internal static string GetPathExtension(string path)
         {
-            if (!path.IsNullOrWhiteSpace() && path.IndexOf('.') >= 0)
+            if (!string.IsNullOrWhiteSpace(path) && path.IndexOf('.') >= 0)
             {
                 return path.Substring(path.LastIndexOf('.'));
             }

@@ -69,7 +69,7 @@ namespace Spool.Demo
         public static void WriteFileTest()
         {
             var spoolPool = Provider.GetService<ISpoolPool>();
-            var buffer = File.ReadAllBytes(@"D:\FILE0.dcm");
+            var buffer = File.ReadAllBytes(@"D:\DicomTests\FILE0.dcm");
             for (int i = 0; i < FilePoolCount; i++)
             {
                 var total = 100000;

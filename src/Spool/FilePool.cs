@@ -73,7 +73,7 @@ namespace Spool
             //文件夹监控
             if (Option.EnableFileWatcher)
             {
-                if (Option.FileWatcherPath.IsNullOrWhiteSpace())
+                if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
                 {
                     throw new ArgumentException("监控目录为空,无法启动监控功能!");
                 }

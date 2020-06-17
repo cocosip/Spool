@@ -46,12 +46,38 @@ namespace Spool
                 .AddSingleton<IFilePoolFactory, FilePoolFactory>()
                 .AddScoped<IFilePool, FilePool>()
                 .AddScoped<FilePoolOption>()
-                .AddScoped<ITrainManager, TrainManager>()
-                .AddScoped<IFileWriterManager, FileWriterManager>()
-                .AddScoped<IFileWriter, FileWriter>()
-                .AddScoped<Train>()
-                .AddScoped<TrainOption>();
+                .AddTrains()
+                .AddFileWriters()
+                ;
             return services;
         }
+
+        /// <summary>添加文件写入器
+        /// </summary>
+        internal static IServiceCollection AddFileWriters(this IServiceCollection services)
+        {
+            services
+                .AddSingleton<IFileWriterBuilder, FileWriterBuilder>()
+                .AddScoped<IFileWriterPool, FileWriterPool>()
+                .AddScoped<IFileWriter, FileWriter>()
+                .AddScoped<FileWriterOption>();
+            return services;
+        }
+
+        /// <summary>添加序列
+        /// </summary>
+        internal static IServiceCollection AddTrains(this IServiceCollection services)
+        {
+            services
+                .AddSingleton<ITrainBuilder, TrainBuilder>()
+                .AddScoped<ITrainManager, TrainManager>()
+                .AddScoped<ITrain, Train>()
+                .AddScoped<TrainOption>()
+                ;
+            return services;
+        }
+
+
+
     }
 }

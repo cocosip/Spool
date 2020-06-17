@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Transactions;
 
 namespace Spool.Trains
 {
@@ -36,6 +35,7 @@ namespace Spool.Trains
         /// </summary>
         public TrainManager(ILogger<TrainManager> logger, ISpoolHost host, IFilePoolFactory filePoolFactory, FilePoolOption option)
         {
+
             _logger = logger;
             _host = host;
             _filePoolFactory = filePoolFactory;

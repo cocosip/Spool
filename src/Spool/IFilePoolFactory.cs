@@ -6,7 +6,7 @@
     {
         /// <summary>根据文件池描述生成文件池选项
         /// </summary>
-        FilePoolOption BuildOption(FilePoolDescriptor descriptor);
+        FilePoolOption CreateOption(FilePoolDescriptor descriptor);
 
         /// <summary>创建文件池
         /// </summary>

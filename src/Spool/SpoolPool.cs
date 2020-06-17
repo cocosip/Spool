@@ -190,7 +190,7 @@ namespace Spool
                 throw new ArgumentException("不存在任何文件池!");
             }
             //设置默认文件池名称
-            if (Option.DefaultPool.IsNullOrWhiteSpace())
+            if (!string.IsNullOrWhiteSpace(Option.DefaultPool))
             {
                 Option.DefaultPool = Option.FilePools.FirstOrDefault()?.Name;
             }
@@ -237,10 +237,11 @@ namespace Spool
         /// </summary>
         private IFilePool GetFilePool(string poolName)
         {
-            if (poolName.IsNullOrWhiteSpace())
+            if (!string.IsNullOrWhiteSpace(poolName))
             {
                 poolName = Option.DefaultPool;
             }
+
             if (!_filePoolDict.TryGetValue(poolName, out IFilePool filePool))
             {
                 throw new ArgumentException($"未找到名为'{poolName}' 的文件池,请检查配置.");
