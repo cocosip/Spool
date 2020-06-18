@@ -3,9 +3,7 @@ using Moq;
 using Spool.Trains;
 using Spool.Utility;
 using Spool.Writers;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Spool.Tests.Trains
@@ -94,7 +92,6 @@ namespace Spool.Tests.Trains
 
             ITrain train = new Train(mockTrainLogger.Object, filePoolOption, mockIdGenerator.Object, mockFileWriterPool.Object, trainOption);
 
-
             var mockTrainBuilder = new Mock<ITrainBuilder>();
             mockTrainBuilder.Setup(x => x.BuildPoolTrains(It.IsAny<FilePoolOption>()))
                 .Returns(new List<ITrain>());
@@ -102,15 +99,59 @@ namespace Spool.Tests.Trains
             mockTrainBuilder.Setup(x => x.BuildTrain(1, It.IsAny<FilePoolOption>()))
                 .Returns(train);
 
+            ITrainFactory trainFactory = new TrainFactory(_mockLogger.Object, filePoolOption, mockTrainBuilder.Object);
+            trainFactory.Initialize();
+            var writeTrain = trainFactory.GetWriteTrain();
+            Assert.Equal(1, writeTrain.Index);
+            Assert.Equal("_000001_", writeTrain.Name);
+            Assert.Equal("D:\\Pool1\\_000001_", writeTrain.Path);
+            Assert.Equal(TrainType.ReadWrite, writeTrain.TrainType);
+
+            mockTrainBuilder.Verify(x => x.BuildPoolTrains(It.IsAny<FilePoolOption>()), Times.Once);
+            mockTrainBuilder.Verify(x => x.BuildTrain(It.IsAny<int>(), It.IsAny<FilePoolOption>()), Times.Once);
+
+        }
+
+        [Fact]
+        public void GetWriteTrain_BuildNew_Test()
+        {
+            FilePoolOption filePoolOption = new FilePoolOption()
+            {
+                Path = "D:\\Pool1"
+            };
+            TrainOption trainOption = new TrainOption()
+            {
+                Index = 2
+            };
+            var mockTrainLogger = new Mock<ILogger<Train>>();
+            var mockIdGenerator = new Mock<IdGenerator>();
+            var mockFileWriterPool = new Mock<IFileWriterPool>();
+            var mockTrain = new Mock<ITrain>();
+            mockTrain.SetupGet(x => x.Index)
+                .Returns(1);
+            mockTrain.SetupGet(x => x.TrainType)
+                .Returns(TrainType.Read);
+
+
+            ITrain train = new Train(mockTrainLogger.Object, filePoolOption, mockIdGenerator.Object, mockFileWriterPool.Object, trainOption);
+
+            var mockTrainBuilder = new Mock<ITrainBuilder>();
+            mockTrainBuilder.Setup(x => x.BuildPoolTrains(It.IsAny<FilePoolOption>()))
+                .Returns(new List<ITrain>());
+
+            mockTrainBuilder.Setup(x => x.BuildTrain(1, It.IsAny<FilePoolOption>()))
+                .Returns(mockTrain.Object);
+
+            mockTrainBuilder.Setup(x => x.BuildTrain(2, It.IsAny<FilePoolOption>()))
+                .Returns(train);
 
             ITrainFactory trainFactory = new TrainFactory(_mockLogger.Object, filePoolOption, mockTrainBuilder.Object);
-
             trainFactory.Initialize();
 
             var writeTrain = trainFactory.GetWriteTrain();
+            Assert.Equal(2, writeTrain.Index);
 
-            Assert.Equal(1, writeTrain.Index);
-
+            mockTrainBuilder.Verify(x => x.BuildTrain(It.IsAny<int>(), It.IsAny<FilePoolOption>()), Times.Between(1, 3, Moq.Range.Exclusive));
 
         }
 

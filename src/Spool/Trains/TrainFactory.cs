@@ -99,6 +99,11 @@ namespace Spool.Trains
                 {
                     _manualResetEventSlim.Reset();
                     writeTrain = _trainBuilder.BuildTrain(GetLatestNextIndex(), _option);
+                    
+                    //绑定事件
+                    BindDefaultEvent(writeTrain);
+                    writeTrain.Initialize();
+
                     writeTrain.ChangeType(TrainType.Write);
                 }
                 catch (Exception ex)
