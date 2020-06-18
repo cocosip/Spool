@@ -16,6 +16,19 @@ namespace Spool.Trains
     /// </summary>
     public class Train : ITrain
     {
+
+        /// <summary>序列删除事件
+        /// </summary>
+        public event EventHandler<TrainDeleteEventArgs> OnDelete;
+
+        /// <summary>序列类型转换事件
+        /// </summary>
+        public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
+
+        /// <summary>序列写满
+        /// </summary>
+        public event EventHandler<TrainWriteOverEventArgs> OnWriteOver;
+
         /// <summary>序列的索引
         /// </summary>
         public int Index { get; private set; }
@@ -31,11 +44,7 @@ namespace Spool.Trains
         /// <summary>序列类型
         /// </summary>
         public TrainType TrainType { get; set; }
-
-        /// <summary>是否已经初始化
-        /// </summary>
-        public bool Initialized { get; private set; } = false;
-
+        
         /// <summary>当前序列下待处理的数量
         /// </summary>
         public int PendingCount { get { return _pendingQueue.Count; } }
@@ -43,6 +52,10 @@ namespace Spool.Trains
         /// <summary>当前序列下被取走的数量
         /// </summary>
         public int ProgressingCount { get { return _progressingDict.Count; } }
+
+        /// <summary>是否已经初始化
+        /// </summary>
+        private bool _initialized = false;
 
         /// <summary>当前序列下文件的全部索引
         /// </summary>
@@ -52,21 +65,6 @@ namespace Spool.Trains
         /// </summary>
         private readonly ConcurrentDictionary<string, SpoolFile> _progressingDict;
 
-        /// <summary>序列删除事件
-        /// </summary>
-        public event EventHandler<TrainDeleteEventArgs> OnDelete;
-
-        /// <summary>序列类型转换事件
-        /// </summary>
-        public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
-
-        /// <summary>序列写满
-        /// </summary>
-        public event EventHandler<TrainWriteOverEventArgs> OnWriteOver;
-
-        ///// <summary>序列标记为删除后,有归还操作
-        ///// </summary>
-        //public event EventHandler<TrainDeleteReturnFilesEventArgs> OnDeleteReturn;
 
         private readonly ILogger _logger;
         private readonly FilePoolOption _option;
@@ -91,6 +89,38 @@ namespace Spool.Trains
         }
 
 
+        /// <summary>初始化
+        /// </summary>
+        public void Initialize()
+        {
+            if (_initialized)
+            {
+                _logger.LogDebug("序列已经初始化,文件池名:'{0}',当前序列索引:'{1}'.", _option.Name, Index);
+                return;
+            }
+
+            //创建序列文件夹
+            if (FilePathUtil.CreateIfNotExists(Path))
+            {
+                _logger.LogDebug("创建序列文件夹,文件池名:'{0}',文件池路径:'{1}',当前序列索引:'{2}',序列路径:'{3}'.", _option.Name, _option.Path, Index, Path);
+            }
+            _initialized = true;
+        }
+
+        /// <summary>序列信息
+        /// </summary>
+        public string Info()
+        {
+            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{Path}]";
+        }
+
+
+        /// <summary>能否释放
+        /// </summary>
+        public bool IsEmpty()
+        {
+            return _pendingQueue.IsEmpty;
+        }
 
 
         /// <summary>写文件
@@ -216,6 +246,7 @@ namespace Spool.Trains
 
         /// <summary>释放文件
         /// </summary>
+        /// <param name="spoolFiles">文件列表</param>
         public void ReleaseFiles(params SpoolFile[] spoolFiles)
         {
             try
@@ -224,7 +255,7 @@ namespace Spool.Trains
                 {
                     if (_progressingDict.TryRemove(spoolFile.GenerateCode(), out SpoolFile deleteFile))
                     {
-                        FileHelper.DeleteIfExists(deleteFile.Path);
+                        FilePathUtil.DeleteFileIfExists(deleteFile.Path);
                     }
                     else
                     {
@@ -242,37 +273,7 @@ namespace Spool.Trains
             }
         }
 
-        /// <summary>序列信息
-        /// </summary>
-        public string Info()
-        {
-            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{Path}]";
-        }
 
-        /// <summary>初始化
-        /// </summary>
-        public void Initialize()
-        {
-            if (Initialized)
-            {
-                _logger.LogDebug("序列已经初始化,文件池名:'{0}',当前序列索引:'{1}'.", _option.Name, Index);
-                return;
-            }
-
-            //创建序列文件夹
-            if (DirectoryHelper.CreateIfNotExists(Path))
-            {
-                _logger.LogDebug("创建序列文件夹,文件池名:'{0}',文件池路径:'{1}',当前序列索引:'{2}',序列路径:'{3}'.", _option.Name, _option.Path, Index, Path);
-            }
-            Initialized = true;
-        }
-
-        /// <summary>能否释放
-        /// </summary>
-        public bool IsEmpty()
-        {
-            return _pendingQueue.IsEmpty;
-        }
 
         /// <summary>能否删除
         /// </summary>
@@ -280,8 +281,6 @@ namespace Spool.Trains
         {
             return IsEmpty() && _progressingDict.Count == 0 && TrainType == TrainType.Read;
         }
-
-
 
         /// <summary>序列类型转换
         /// </summary>
@@ -308,6 +307,7 @@ namespace Spool.Trains
                 LoadFiles();
             }
         }
+        #region Private Methods
 
         /// <summary>真实的删除
         /// </summary>
@@ -365,11 +365,12 @@ namespace Spool.Trains
         private string GenerateFilePath(string fileExt)
         {
             //组/索引/
-            var fileId = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
-            var path = SystemPath.Combine(_option.Path, $"{Name}", fileId);
+            var fileName = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
+            var path = SystemPath.Combine(_option.Path, $"{Name}", fileName);
             return path;
         }
 
+        #endregion
 
 
     }

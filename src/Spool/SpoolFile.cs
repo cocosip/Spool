@@ -24,7 +24,7 @@ namespace Spool
         {
             get
             {
-                return PathUtil.GetPathExtension(Path);
+                return FilePathUtil.GetPathExtension(Path);
             }
         }
 
@@ -34,5 +34,18 @@ namespace Spool
         {
             return $"[FilePool:{FilePoolName},Index:{TrainIndex},Path:{Path},FileExt:{FileExt}]";
         }
+
+        /// <summary>克隆SpoolFile
+        /// </summary>
+        public SpoolFile Clone()
+        {
+            return new SpoolFile()
+            {
+                FilePoolName = FilePoolName,
+                TrainIndex = TrainIndex,
+                Path = Path
+            };
+        }
+
     }
 }

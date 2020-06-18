@@ -22,7 +22,7 @@ namespace Spool
 
         private readonly ILogger _logger;
         private readonly IScheduleService _scheduleService;
-        private readonly ITrainManager _trainManager;
+        private readonly ITrainFactory _trainFactory;
 
         /// <summary>文件池的配置信息
         /// </summary>
@@ -42,11 +42,11 @@ namespace Spool
 
         /// <summary>Ctor
         /// </summary>
-        public FilePool(ILogger<FilePool> logger, IScheduleService scheduleService, ITrainManager trainManager, FilePoolOption option)
+        public FilePool(ILogger<FilePool> logger, IScheduleService scheduleService, ITrainFactory trainFactory, FilePoolOption option)
         {
             _logger = logger;
             _scheduleService = scheduleService;
-            _trainManager = trainManager;
+            _trainFactory = trainFactory;
             Option = option;
 
             _takeFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
@@ -77,7 +77,7 @@ namespace Spool
                 {
                     throw new ArgumentException("监控目录为空,无法启动监控功能!");
                 }
-                if (DirectoryHelper.CreateIfNotExists(Option.FileWatcherPath))
+                if (FilePathUtil.CreateIfNotExists(Option.FileWatcherPath))
                 {
                     _logger.LogInformation("创建文件池:'{0}'的监控目录:'{1}'.", Option.Name, Option.FileWatcherPath);
                 }
@@ -119,7 +119,7 @@ namespace Spool
         /// <returns></returns>
         public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
-            var train = _trainManager.GetWriteTrain();
+            var train = _trainFactory.GetWriteTrain();
             return await train.WriteFileAsync(stream, fileExt);
         }
 
@@ -130,7 +130,7 @@ namespace Spool
         /// <returns></returns>
         public SpoolFile WriteFile(Stream stream, string fileExt)
         {
-            var train = _trainManager.GetWriteTrain();
+            var train = _trainFactory.GetWriteTrain();
             return train.WriteFile(stream, fileExt);
         }
 
@@ -140,11 +140,11 @@ namespace Spool
         /// <returns></returns>
         public SpoolFile[] GetFiles(int count = 1)
         {
-            var train = _trainManager.GetReadTrain();
+            var train = _trainFactory.GetReadTrain();
             var spoolFiles = train.GetFiles(count).ToList();
             if (spoolFiles.Count < count)
             {
-                var secondTrain = _trainManager.GetReadTrain();
+                var secondTrain = _trainFactory.GetReadTrain();
                 var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
                 spoolFiles.AddRange(secondSpoolFiles);
             }
@@ -180,7 +180,7 @@ namespace Spool
             var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
-                var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
+                var train = _trainFactory.GetTrainByIndex(groupSpoolFile.Key);
                 if (train != null)
                 {
                     train.ReturnFiles(groupSpoolFile.ToArray());
@@ -211,7 +211,7 @@ namespace Spool
             var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
-                var train = _trainManager.GetTrainByIndex(groupSpoolFile.Key);
+                var train = _trainFactory.GetTrainByIndex(groupSpoolFile.Key);
                 if (train != null)
                 {
                     train.ReleaseFiles(groupSpoolFile.ToArray());
@@ -232,7 +232,7 @@ namespace Spool
         /// </summary>
         public int GetPendingCount()
         {
-            var trains = _trainManager.GetTrains(x => x.TrainType == TrainType.Read || x.TrainType == TrainType.ReadWrite);
+            var trains = _trainFactory.GetTrains(x => x.TrainType == TrainType.Read || x.TrainType == TrainType.ReadWrite);
             return trains.Sum(x => x.PendingCount);
         }
 
@@ -249,13 +249,13 @@ namespace Spool
         private void Initialize()
         {
             //创建目录
-            if (DirectoryHelper.CreateIfNotExists(Option.Path))
+            if (FilePathUtil.CreateIfNotExists(Option.Path))
             {
                 _logger.LogInformation("创建文件池:'{0}' 的文件目录:'{1}'.", Option.Name, Option.Path);
             }
 
             //序列管理器初始化
-            _trainManager.Initialize();
+            _trainFactory.Initialize();
         }
 
         /// <summary>开始查询过期的未归还的文件
@@ -353,7 +353,7 @@ namespace Spool
                     if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
                     {
                         var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
-                        var fileExt = PathUtil.GetPathExtension(file.Name);
+                        var fileExt = FilePathUtil.GetPathExtension(file.Name);
                         WriteFile(fileStream, fileExt);
                         //添加到删除列表
                         deleteFiles.Add(file.FullName);
@@ -375,7 +375,7 @@ namespace Spool
                     {
                         foreach (var deleteFile in deleteFiles)
                         {
-                            FileHelper.DeleteIfExists(deleteFile);
+                            FilePathUtil.DeleteFileIfExists(deleteFile);
                         }
                     }
                 }

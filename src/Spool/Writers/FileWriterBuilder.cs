@@ -23,7 +23,6 @@ namespace Spool.Writers
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                var fileWriter = scope.ServiceProvider.GetService<IFileWriter>();
                 var injectOption = scope.ServiceProvider.GetService<FileWriterOption>();
 
                 injectOption.Name = option.Name;
@@ -32,6 +31,7 @@ namespace Spool.Writers
                 injectOption.ConcurrentFileWriterCount = option.ConcurrentFileWriterCount;
                 injectOption.WriteBufferSize = option.WriteBufferSize;
 
+                var fileWriter = scope.ServiceProvider.GetService<IFileWriter>();
                 return fileWriter;
             }
         }

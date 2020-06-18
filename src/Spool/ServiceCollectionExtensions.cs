@@ -41,7 +41,6 @@ namespace Spool
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .Configure<SpoolOption>(configure)
                 .AddSingleton<ISpoolPool, SpoolPool>()
-                .AddSingleton<ISpoolHost, SpoolHost>()
                 .AddSingleton<IdGenerator>()
                 .AddSingleton<IFilePoolFactory, FilePoolFactory>()
                 .AddScoped<IFilePool, FilePool>()
@@ -70,7 +69,7 @@ namespace Spool
         {
             services
                 .AddSingleton<ITrainBuilder, TrainBuilder>()
-                .AddScoped<ITrainManager, TrainManager>()
+                .AddScoped<ITrainFactory, TrainFactory>()
                 .AddScoped<ITrain, Train>()
                 .AddScoped<TrainOption>()
                 ;

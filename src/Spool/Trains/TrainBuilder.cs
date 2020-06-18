@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Spool.Utility;
 using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Spool.Trains
 {
@@ -21,6 +24,21 @@ namespace Spool.Trains
 
         /// <summary>创建序列
         /// </summary>
+        /// <param name="index">序列号</param>
+        /// <param name="filePoolOption">文件池配置信息</param>
+        /// <returns></returns>
+        public ITrain BuildTrain(int index, FilePoolOption filePoolOption)
+        {
+            var option = new TrainOption()
+            {
+                Index = index
+            };
+            return BuildTrain(option, filePoolOption);
+        }
+
+
+        /// <summary>创建序列
+        /// </summary>
         /// <param name="option">序列配置信息</param>
         /// <param name="filePoolOption">文件池配置信息</param>
         /// <returns></returns>
@@ -38,7 +56,7 @@ namespace Spool.Trains
                 injectFilePoolOption.MaxFileWriterCount = filePoolOption.MaxFileWriterCount;
                 injectFilePoolOption.ConcurrentFileWriterCount = filePoolOption.ConcurrentFileWriterCount;
                 injectFilePoolOption.WriteBufferSize = filePoolOption.WriteBufferSize;
-                
+
                 injectFilePoolOption.TrainMaxFileCount = filePoolOption.TrainMaxFileCount;
                 injectFilePoolOption.EnableFileWatcher = filePoolOption.EnableFileWatcher;
                 injectFilePoolOption.FileWatcherPath = filePoolOption.FileWatcherPath;
@@ -53,6 +71,28 @@ namespace Spool.Trains
             }
         }
 
+        /// <summary>创建已经存在的文件池下的序列
+        /// </summary>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        public List<ITrain> BuildPoolTrains(FilePoolOption option)
+        {
+            var trains = new List<ITrain>();
+            var directoryInfo = new DirectoryInfo(option.Path);
+            var trainDirs = directoryInfo.GetDirectories();
+            foreach (var trainDir in trainDirs)
+            {
+                //是否为序列的文件夹名
+                if (TrainUtil.IsTrainName(trainDir.Name))
+                {
+                    //序列索引
+                    var index = TrainUtil.GetTrainIndex(trainDir.Name);
+                    var train = BuildTrain(index, option);
+                    trains.Add(train);
+                }
+            }
+            return trains;
+        }
 
 
 

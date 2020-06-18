@@ -12,9 +12,6 @@ namespace Spool
         /// </summary>
         public static IServiceProvider ConfigureSpool(this IServiceProvider provider, Action<SpoolOption> configure = null)
         {
-            //设置全局的依赖注入
-            var host = provider.GetService<ISpoolHost>();
-            host.SetupDI(provider);
 
             var option = provider.GetService<IOptions<SpoolOption>>().Value;
             configure?.Invoke(option);

@@ -103,7 +103,7 @@ namespace Spool
         {
             using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
-                var fileExt = PathUtil.GetPathExtension(filename);
+                var fileExt = FilePathUtil.GetPathExtension(filename);
                 return await WriteAsync(fs, fileExt, poolName);
             }
         }

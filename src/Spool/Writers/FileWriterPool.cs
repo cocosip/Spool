@@ -56,7 +56,6 @@ namespace Spool.Writers
         /// <summary>归还一个文件写入器
         /// </summary>
         public void Return(IFileWriter fileWriter)
-
         {
             if (fileWriter != null)
             {

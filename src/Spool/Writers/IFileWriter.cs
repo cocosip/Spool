@@ -23,6 +23,6 @@ namespace Spool.Writers
         /// <param name="stream">数据流</param>
         /// <param name="targetPath">存储路径</param>
         /// <returns></returns>
-        public void WriteFile(Stream stream, string targetPath);
+        void WriteFile(Stream stream, string targetPath);
     }
 }

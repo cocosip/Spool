@@ -29,6 +29,7 @@ namespace Spool.Demo
                     Path = $"D:\\SpoolTest\\pool{i}",
                     MaxFileWriterCount = 50,
                     TrainMaxFileCount = 1000,
+                    ConcurrentFileWriterCount = 3,
                     WriteBufferSize = 1024 * 1024 * 2,
                     EnableAutoReturn = true,
                     AutoReturnSeconds = 10,
@@ -63,7 +64,7 @@ namespace Spool.Demo
         public static void Run()
         {
             WriteFileTest();
-            //GetFileTest();
+            GetFileTest();
         }
 
         public static void WriteFileTest()
@@ -85,7 +86,7 @@ namespace Spool.Demo
                         await spoolPool.WriteAsync(buffer, ext, poolName);
                         Interlocked.Increment(ref currentWrite);
                         Console.WriteLine("当前文件池数量:{0}", spoolPool.GetPendingCount(poolName));
-                        //Thread.Sleep(50);
+                        Thread.Sleep(10);
                     }
 
                 });
@@ -100,7 +101,7 @@ namespace Spool.Demo
                 });
             }
         }
-    
+
 
         public static void GetFileTest()
         {
@@ -115,7 +116,7 @@ namespace Spool.Demo
                         var spoolFiles = new SpoolFile[0] { };
                         try
                         {
-                            spoolFiles = spoolPool.Get(50, poolName);
+                            spoolFiles = spoolPool.Get(1000, poolName);
                             //释放
                             spoolPool.Release(poolName, spoolFiles);
                             spoolFiles = new SpoolFile[0] { };
