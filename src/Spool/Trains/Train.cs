@@ -44,7 +44,7 @@ namespace Spool.Trains
         /// <summary>序列类型
         /// </summary>
         public TrainType TrainType { get; set; }
-        
+
         /// <summary>当前序列下待处理的数量
         /// </summary>
         public int PendingCount { get { return _pendingQueue.Count; } }
@@ -122,7 +122,6 @@ namespace Spool.Trains
             return _pendingQueue.IsEmpty;
         }
 
-
         /// <summary>写文件
         /// </summary>
         /// <param name="stream">文件流</param>
@@ -170,7 +169,6 @@ namespace Spool.Trains
                     OnWriteOver.Invoke(this, args);
                 }
 
-
                 return spoolFile;
             }
             catch (Exception ex)
@@ -215,10 +213,7 @@ namespace Spool.Trains
             {
                 _logger.LogError("从序列:'{0}' 中获取文件失败。异常信息:{1}", Index, ex.Message);
                 //如果出现异常,则判断集合是否为空
-                if (spoolFiles.Any())
-                {
-                    ReturnFiles(spoolFiles.ToArray());
-                }
+                throw;
             }
             return spoolFiles.ToArray();
         }
@@ -277,7 +272,7 @@ namespace Spool.Trains
 
         /// <summary>能否删除
         /// </summary>
-        public bool CanDelete()
+        private bool CanDelete()
         {
             return IsEmpty() && _progressingDict.Count == 0 && TrainType == TrainType.Read;
         }

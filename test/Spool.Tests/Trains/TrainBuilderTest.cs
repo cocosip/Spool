@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Spool.Trains;
 using Spool.Utility;
-using Spool.Writers;
 using System;
 using System.IO;
 using Xunit;
