@@ -2,7 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Spool.Trains;
+using Spool.Utility;
+using Spool.Writers;
 using System;
+using System.IO;
 using Xunit;
 
 namespace Spool.Tests.Trains
@@ -84,6 +87,58 @@ namespace Spool.Tests.Trains
             mockScopeServiceProvider.Verify(x => x.GetService(typeof(ITrain)), Times.Once);
         }
 
+
+        [Fact]
+        public void BuildPoolTrains_Test()
+        {
+            var filePoolOption = new FilePoolOption()
+            {
+                Name = "Pool1",
+                Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pool1")
+            };
+            var filePoolOption1 = new FilePoolOption();
+            var trainOption1 = new TrainOption();
+            
+            var mockTrain = new Mock<ITrain>();
+
+            var mockScopeServiceProvider = new Mock<IServiceProvider>();
+            mockScopeServiceProvider.Setup(x => x.GetService(typeof(FilePoolOption)))
+                .Returns(filePoolOption1);
+
+            mockScopeServiceProvider.Setup(x => x.GetService(typeof(TrainOption)))
+                 .Returns(trainOption1);
+
+            mockScopeServiceProvider.Setup(x => x.GetService(typeof(ITrain)))
+               .Returns(mockTrain.Object);
+
+            var mockScope = new Mock<IServiceScope>();
+            mockScope.Setup(x => x.ServiceProvider)
+                .Returns(mockScopeServiceProvider.Object);
+
+            var mockServiceScopeFactory = new Mock<IServiceScopeFactory>();
+            mockServiceScopeFactory.Setup(x => x.CreateScope())
+                .Returns(mockScope.Object);
+
+            var mockServiceProvider = new Mock<IServiceProvider>();
+            mockServiceProvider.Setup(x => x.GetService(typeof(IServiceScopeFactory)))
+                .Returns(mockServiceScopeFactory.Object);
+            ITrainBuilder trainBuilder = new TrainBuilder(_mockLogger.Object, mockServiceProvider.Object);
+
+            var train1Path = Path.Combine(filePoolOption.Path, "_000001_");
+            var train2Path = Path.Combine(filePoolOption.Path, "_000002_");
+            FilePathUtil.CreateIfNotExists(train1Path);
+            FilePathUtil.CreateIfNotExists(train2Path);
+
+            var trains = trainBuilder.BuildPoolTrains(filePoolOption);
+
+            Assert.Equal(2, trains.Count);
+            Assert.Equal("Pool1", filePoolOption1.Name);
+            Assert.Equal(filePoolOption.Path, filePoolOption1.Path);
+
+            FilePathUtil.DeleteDirIfExist(filePoolOption.Path, true);
+            Assert.False(Directory.Exists(filePoolOption.Path));
+
+        }
 
     }
 }

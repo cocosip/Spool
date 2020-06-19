@@ -83,8 +83,6 @@ namespace Spool.Trains
             return info;
         }
 
-
-
         /// <summary>获取可以写的序列
         /// </summary>
         public ITrain GetWriteTrain()
@@ -99,7 +97,7 @@ namespace Spool.Trains
                 {
                     _manualResetEventSlim.Reset();
                     writeTrain = _trainBuilder.BuildTrain(GetLatestNextIndex(), _option);
-                    
+
                     //绑定事件
                     BindDefaultEvent(writeTrain);
                     writeTrain.Initialize();
@@ -109,6 +107,7 @@ namespace Spool.Trains
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "创建新的写入序列出错!{0}", ex.Message);
+                    throw ex;
                 }
                 finally
                 {
@@ -162,21 +161,23 @@ namespace Spool.Trains
             if (readTrain == null)
             {
                 _manualResetEventSlim.Wait();
-                //当没有任何默认序列时,就获取写入序列,把他变成可读可写
 
-                //阻塞其他的线程
-                _manualResetEventSlim.Reset();
-                try
+                //获取下一个状态为写的
+                var writeTrain = _trainDict.Values.OrderByDescending(x => x.Index).FirstOrDefault(x => x.TrainType == TrainType.Write);
+
+                if (writeTrain != null)
                 {
-                    //获取下一个状态为写的
-                    var writeTrain = _trainDict.Values.OrderBy(x => x.Index).FirstOrDefault(x => x.TrainType == TrainType.Write);
-                    //状态变成刻度可写
-                    writeTrain.ChangeType(TrainType.ReadWrite);
-                    return writeTrain;
-                }
-                finally
-                {
-                    _manualResetEventSlim.Set();
+                    try
+                    {
+                        //阻塞其他的线程
+                        _manualResetEventSlim.Reset();
+                        writeTrain.ChangeType(TrainType.ReadWrite);
+                        return writeTrain;
+                    }
+                    finally
+                    {
+                        _manualResetEventSlim.Set();
+                    }
                 }
             }
 
