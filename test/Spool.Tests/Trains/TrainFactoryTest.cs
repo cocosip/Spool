@@ -265,6 +265,8 @@ namespace Spool.Tests.Trains
             Assert.Equal(3, readTrain.Index);
             Assert.Equal(TrainType.Read, train.TrainType);
 
+            Directory.Delete(filePoolOption.Path, true);
+
         }
 
         [Fact]

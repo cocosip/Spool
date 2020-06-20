@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,6 +53,8 @@ namespace Spool.Tests.Trains
             train.Initialize();
             Assert.False(Directory.Exists(train.Path));
 
+            Directory.Delete(filePoolOption.Path, true);
+
         }
 
         [Fact]
@@ -86,7 +89,7 @@ namespace Spool.Tests.Trains
             mockFileWriter.Verify(x => x.WriteFile(It.IsAny<Stream>(), It.IsAny<string>()), Times.Once);
             mockFileWriterPool.Verify(x => x.Return(It.Is<IFileWriter>(x => x.Id == "123456")), Times.Once);
 
-            Directory.Delete(train.Path, true);
+            Directory.Delete(filePoolOption.Path, true);
         }
 
         [Fact]
@@ -138,7 +141,7 @@ namespace Spool.Tests.Trains
             mockFileWriter.Verify(x => x.WriteFile(It.IsAny<Stream>(), It.IsAny<string>()), Times.Between(1, 3, Moq.Range.Exclusive));
             mockFileWriterPool.Verify(x => x.Return(It.Is<IFileWriter>(x => x.Id == "123456")), Times.Between(1, 3, Moq.Range.Exclusive));
 
-            Directory.Delete(train.Path, true);
+            Directory.Delete(filePoolOption.Path, true);
         }
 
         [Fact]
@@ -185,7 +188,7 @@ namespace Spool.Tests.Trains
             Assert.Equal(0, writeOverCount);
 
 
-            Directory.Delete(train.Path, true);
+            Directory.Delete(filePoolOption.Path, true);
         }
 
         [Fact]
@@ -224,6 +227,8 @@ namespace Spool.Tests.Trains
             Assert.Single(spoolFiles1);
             Assert.Equal(0, train.PendingCount);
             Assert.Equal(1, train.ProgressingCount);
+
+            Directory.Delete(filePoolOption.Path, true);
 
         }
 
@@ -292,7 +297,114 @@ namespace Spool.Tests.Trains
             Assert.Equal(0, train.PendingCount);
             Assert.Equal(0, train.ProgressingCount);
 
+            Directory.Delete(filePoolOption.Path, true);
         }
- 
+
+        [Fact]
+        public async Task ReturnFiles_Test()
+        {
+            var filePoolOption = new FilePoolOption()
+            {
+                Name = "Pool16",
+                Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pool16"),
+                TrainMaxFileCount = 10
+            };
+            var trainOption = new TrainOption()
+            {
+                Index = 1
+            };
+
+            var mockIdGenerator = new Mock<IdGenerator>();
+
+            var mockFileWriter = new Mock<IFileWriter>();
+            mockFileWriter.Setup(x => x.Id).Returns("123456");
+            //mockFileWriter.Setup(x => x.WriteFile(It.IsAny<Stream>(), It.IsAny<string>()));
+
+            var mockFileWriterPool = new Mock<IFileWriterPool>();
+            mockFileWriterPool.Setup(x => x.Get()).Returns(mockFileWriter.Object);
+
+            ITrain train = new Train(_mockLogger.Object, filePoolOption, mockIdGenerator.Object, mockFileWriterPool.Object, trainOption);
+            train.Initialize();
+
+            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes("hello world!")))
+            {
+                await train.WriteFileAsync(ms, ".txt");
+            }
+            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes("1234567890")))
+            {
+                await train.WriteFileAsync(ms, ".txt");
+            }
+            var spoolFiles1 = train.GetFiles(3);
+
+            Assert.Equal(2, spoolFiles1.Length);
+            Assert.Equal(0, train.PendingCount);
+            Assert.Equal(2, train.ProgressingCount);
+            train.ReturnFiles(spoolFiles1);
+            Assert.Equal(2, train.PendingCount);
+            Assert.Equal(0, train.ProgressingCount);
+
+            train.ReturnFiles(spoolFiles1);
+            Assert.Equal(2, train.PendingCount);
+            Assert.Equal(0, train.ProgressingCount);
+
+            Directory.Delete(filePoolOption.Path, true);
+        }
+
+        [Fact]
+        public void ChangeType_Test()
+        {
+            var filePoolOption = new FilePoolOption()
+            {
+                Name = "Pool17",
+                Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pool17"),
+                TrainMaxFileCount = 10
+            };
+            var trainOption = new TrainOption()
+            {
+                Index = 1
+            };
+
+            var fileWriterLogger = new Mock<ILogger<FileWriter>>();
+            IFileWriter fileWriter = new FileWriter(fileWriterLogger.Object, new FilePoolOption()
+            {
+                WriteBufferSize = 1024 * 1024
+            });
+
+            var mockIdGenerator = new Mock<IdGenerator>();
+            var mockFileWriterPool = new Mock<IFileWriterPool>();
+            mockFileWriterPool.Setup(x => x.Get()).Returns(fileWriter);
+
+            ITrain train = new Train(_mockLogger.Object, filePoolOption, mockIdGenerator.Object, mockFileWriterPool.Object, trainOption);
+            var onTypeChangeInvokeCount = 0;
+            train.OnTypeChange += (o, e) =>
+            {
+                Interlocked.Increment(ref onTypeChangeInvokeCount);
+            };
+
+            train.Initialize();
+
+            var info = train.Info();
+            Assert.Contains(filePoolOption.Name, info);
+            Assert.Contains(train.Index.ToString(), info);
+
+            //写入测试文件
+            var path = Path.Combine(train.Path, "1.txt");
+            File.WriteAllText(path, "123456");
+            Assert.Equal(0, train.PendingCount);
+            Assert.Equal(0, train.ProgressingCount);
+
+            //改变类型,会加载数据
+            train.ChangeType(TrainType.Read);
+            Assert.Equal(1, train.PendingCount);
+            Assert.Equal(0, train.ProgressingCount);
+            Assert.Equal(1, onTypeChangeInvokeCount);
+
+            var spoolFile = train.GetFiles();
+            train.ReleaseFiles(spoolFile);
+            Assert.False(File.Exists(spoolFile[0].Path));
+
+            Directory.Delete(filePoolOption.Path, true);
+        }
+
     }
 }

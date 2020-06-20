@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Spool.Extensions;
 using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
@@ -117,10 +116,11 @@ namespace Spool
         {
             var filePool = GetFilePool(poolName);
             var spoolFiles = filePool.GetFiles(count);
+            var copySpoolFiles = spoolFiles.Select(x => x.Clone()).ToArray();
             OnFileGet?.Invoke(this, new GetFileEventArgs()
             {
                 FilePoolName = filePool.Option.Name,
-                SpoolFiles = spoolFiles,
+                SpoolFiles = copySpoolFiles,
                 GetFileCount = count
             });
             return spoolFiles;
@@ -192,7 +192,10 @@ namespace Spool
             //设置默认文件池名称
             if (!string.IsNullOrWhiteSpace(Option.DefaultPool))
             {
-                Option.DefaultPool = Option.FilePools.FirstOrDefault()?.Name;
+                if (!Option.FilePools.Any(x => string.Equals(x.Name, Option.DefaultPool, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Option.DefaultPool = Option.FilePools.FirstOrDefault()?.Name;
+                }
             }
 
             foreach (var descriptor in Option.FilePools)

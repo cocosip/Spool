@@ -48,6 +48,7 @@ namespace Spool.Tests.Utility
             Assert.False(FilePathUtil.DeleteFileIfExists(filePath));
             Assert.False(File.Exists(filePath));
 
+            Directory.Delete(path, true);
         }
 
 
