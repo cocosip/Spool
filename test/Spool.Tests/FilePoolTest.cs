@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
-using Spool.Scheduling;
 using Spool.Trains;
 using System;
 using System.Collections.Generic;
@@ -23,7 +22,7 @@ namespace Spool.Tests
         [Fact]
         public void Start_Shutdown_Test()
         {
-            var mockScheduleService = new Mock<IScheduleService>();
+
             var mockTrainFactory = new Mock<ITrainFactory>();
             var filePoolOption = new FilePoolOption()
             {
@@ -33,7 +32,7 @@ namespace Spool.Tests
                 EnableFileWatcher = true,
                 FileWatcherPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FileWatcher_FPool1"),
             };
-            IFilePool filePool = new FilePool(_mockLogger.Object, mockScheduleService.Object, mockTrainFactory.Object, filePoolOption);
+            IFilePool filePool = new FilePool(_mockLogger.Object, mockTrainFactory.Object, filePoolOption);
 
 
             filePool.Start();
@@ -44,15 +43,13 @@ namespace Spool.Tests
             Assert.True(filePool.IsRunning);
 
             mockTrainFactory.Verify(x => x.Initialize(), Times.Once);
-            mockScheduleService.Verify(x => x.StartTask(It.IsAny<string>(), It.IsAny<Action>(), It.IsAny<int>(), It.IsAny<int>()), Times.Between(1, 3, Moq.Range.Exclusive));
+
             Assert.Equal(filePoolOption.Name, filePool.Option.Name);
             Assert.Equal(filePoolOption.Path, filePool.Option.Path);
 
             filePool.Shutdown();
             filePool.Shutdown();
             Assert.False(filePool.IsRunning);
-            mockScheduleService.Verify(x => x.StopTask(It.IsAny<string>()), Times.Between(1, 3, Moq.Range.Exclusive));
-
 
             Directory.Delete(filePoolOption.Path, true);
             Directory.Delete(filePoolOption.FileWatcherPath, true);
@@ -61,8 +58,6 @@ namespace Spool.Tests
         [Fact]
         public async Task WriteFileAsync_Test()
         {
-            var mockScheduleService = new Mock<IScheduleService>();
-
             var mockTrain = new Mock<ITrain>();
             mockTrain.Setup(x => x.PendingCount).Returns(2);
 
@@ -80,7 +75,7 @@ namespace Spool.Tests
                 EnableFileWatcher = true,
                 FileWatcherPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FileWatcher_FPool1"),
             };
-            IFilePool filePool = new FilePool(_mockLogger.Object, mockScheduleService.Object, mockTrainFactory.Object, filePoolOption);
+            IFilePool filePool = new FilePool(_mockLogger.Object, mockTrainFactory.Object, filePoolOption);
             filePool.Start();
 
             using (var ms = new MemoryStream(Encoding.UTF8.GetBytes("123456")))
@@ -121,7 +116,6 @@ namespace Spool.Tests
                 Path = Path.Combine(filePoolOption.Path, "_000001_", "0001.txt")
             };
 
-            var mockScheduleService = new Mock<IScheduleService>();
             var mockReadTrain = new Mock<ITrain>();
             mockReadTrain.Setup(x => x.Index).Returns(1);
             mockReadTrain.Setup(x => x.GetFiles(1))
@@ -141,7 +135,7 @@ namespace Spool.Tests
             mockTrainFactory.Setup(x => x.GetTrains(It.IsAny<Func<ITrain, bool>>()))
                 .Returns(new List<ITrain>() { mockReadTrain.Object, mockWriteTrain.Object });
 
-            IFilePool filePool = new FilePool(_mockLogger.Object, mockScheduleService.Object, mockTrainFactory.Object, filePoolOption);
+            IFilePool filePool = new FilePool(_mockLogger.Object, mockTrainFactory.Object, filePoolOption);
             int onFileReturnCount = 0;
             filePool.OnFileReturn += (o, e) =>
             {

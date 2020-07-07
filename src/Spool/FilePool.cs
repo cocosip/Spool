@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Spool.Extensions;
-using Spool.Scheduling;
 using Spool.Trains;
 using Spool.Utility;
 using System;
@@ -17,11 +16,11 @@ namespace Spool
     /// </summary>
     public class FilePool : IFilePool
     {
+        private CancellationTokenSource _cts;
         private int _inFileWatcher = 0;
         private int _isRunning = 0;
 
         private readonly ILogger _logger;
-        private readonly IScheduleService _scheduleService;
         private readonly ITrainFactory _trainFactory;
 
         /// <summary>文件池的配置信息
@@ -42,13 +41,13 @@ namespace Spool
 
         /// <summary>Ctor
         /// </summary>
-        public FilePool(ILogger<FilePool> logger, IScheduleService scheduleService, ITrainFactory trainFactory, FilePoolOption option)
+        public FilePool(ILogger<FilePool> logger, ITrainFactory trainFactory, FilePoolOption option)
         {
             _logger = logger;
-            _scheduleService = scheduleService;
             _trainFactory = trainFactory;
             Option = option;
 
+            _cts = new CancellationTokenSource();
             _takeFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
         }
 
@@ -67,7 +66,7 @@ namespace Spool
             //文件夹监控
             if (Option.EnableAutoReturn)
             {
-                StartScanTimeoutTakeFileTask();
+                StartScanTimeoutFile();
             }
 
             //文件夹监控
@@ -82,7 +81,7 @@ namespace Spool
                     _logger.LogInformation("创建文件池:'{0}'的监控目录:'{1}'.", Option.Name, Option.FileWatcherPath);
                 }
 
-                StartScanFileWatcherTask();
+                StartScanFileWatcher();
             }
 
             Interlocked.Exchange(ref _isRunning, 1);
@@ -98,16 +97,7 @@ namespace Spool
                 return;
             }
 
-            if (Option.EnableAutoReturn)
-            {
-                StopScanTimeoutTakeFileTask();
-            }
-
-            //文件夹监控
-            if (Option.EnableFileWatcher)
-            {
-                StopScanFileWatcherTask();
-            }
+            _cts.Cancel();
 
             Interlocked.Exchange(ref _isRunning, 0);
         }
@@ -244,6 +234,7 @@ namespace Spool
         }
 
         #region Private method
+
         /// <summary>初始化
         /// </summary>
         private void Initialize()
@@ -258,52 +249,48 @@ namespace Spool
             _trainFactory.Initialize();
         }
 
-        /// <summary>开始查询过期的未归还的文件
+        /// <summary>扫描过期未归还的文件
         /// </summary>
-        private void StartScanTimeoutTakeFileTask()
+        private void StartScanTimeoutFile()
         {
-            _scheduleService.StartTask($"FilePool.{Option.Name}.ScanTimeoutTakeFile", ScanTimeoutTakeFile, 1000, Option.ScanReturnFileMillSeconds);
-        }
-
-        /// <summary>停止查询过期的未归还的文件
-        /// </summary>
-        private void StopScanTimeoutTakeFileTask()
-        {
-            _scheduleService.StopTask($"FilePool.{Option.Name}.ScanTimeoutTakeFile");
-        }
-
-        /// <summary>过期未归还文件处理程序
-        /// </summary>
-        private void ScanTimeoutTakeFile()
-        {
-            var timeoutKeyList = new List<string>();
-            foreach (var entry in _takeFileDict)
+            Task.Run(async () =>
             {
-                if (entry.Value.IsTimeout())
-                {
-                    timeoutKeyList.Add(entry.Key);
-                }
-            }
-            foreach (var key in timeoutKeyList)
-            {
+                await Task.Delay(2000);
 
-                if (_takeFileDict.TryRemove(key, out SpoolFileFuture spoolFileFuture))
+                while (!_cts.Token.IsCancellationRequested)
                 {
                     try
                     {
-                        ReturnFiles(spoolFileFuture.File);
-                        _logger.LogDebug("归还文件:{0}", spoolFileFuture.File);
+                        var timeoutKeyList = new List<string>();
+                        foreach (var entry in _takeFileDict)
+                        {
+                            if (entry.Value.IsTimeout())
+                            {
+                                timeoutKeyList.Add(entry.Key);
+                            }
+                        }
+                        foreach (var key in timeoutKeyList)
+                        {
+
+                            if (_takeFileDict.TryRemove(key, out SpoolFileFuture spoolFileFuture))
+                            {
+                                ReturnFiles(spoolFileFuture.File);
+                                _logger.LogDebug("归还文件:{0}", spoolFileFuture.File);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("移除过期文件失败,文件Key:{0}", key);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "系统自动归还文件出错,文件信息:{0}", spoolFileFuture.File);
+                        _logger.LogError(ex, "扫描过期未归还文件出现异常,异常信息:{0}.", ex.Message);
                     }
+
+                    await Task.Delay(Option.ScanReturnFileMillSeconds);
                 }
-                else
-                {
-                    _logger.LogWarning("移除过期文件失败,文件Key:{0}", key);
-                }
-            }
+            }, _cts.Token);
         }
 
         /// <summary>移除指定取走文件
@@ -320,76 +307,73 @@ namespace Spool
 
         /// <summary>开始监控文件任务
         /// </summary>
-        private void StartScanFileWatcherTask()
+        private void StartScanFileWatcher()
         {
-            _scheduleService.StartTask($"FilePool.{Option.Name}.ScanFileWatcher", ScanFileWatcher, 1000, Option.ScanFileWatcherMillSeconds);
-        }
-
-        /// <summary>停止监控文件任务
-        /// </summary>
-        private void StopScanFileWatcherTask()
-        {
-            _scheduleService.StopTask($"FilePool.{Option.Name}.ScanFileWatcher");
-        }
-
-        /// <summary>查询监控目录
-        /// </summary>
-        private void ScanFileWatcher()
-        {
-            if (_inFileWatcher == 1)
+            Task.Run(async () =>
             {
-                _logger.LogWarning("正在进行监控目录的扫描,不会重复进入.文件池:'{0}',监控路径:{1}.", Option.Name, Option.FileWatcherPath);
-                return;
-            }
-            var deleteFiles = new List<string>();
-            try
-            {
-                Interlocked.Exchange(ref _inFileWatcher, 1);
-                var directoryInfo = new DirectoryInfo(Option.FileWatcherPath);
-                var files = directoryInfo.GetFiles();
-                foreach (var file in files)
+                await Task.Delay(2000);
+
+                while (!_cts.Token.IsCancellationRequested)
                 {
-                    //最后写入的时间是2秒前
-                    if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
+                    if (_inFileWatcher == 1)
                     {
-                        var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
-                        var fileExt = FilePathUtil.GetPathExtension(file.Name);
-                        WriteFile(fileStream, fileExt);
-                        //添加到删除列表
-                        deleteFiles.Add(file.FullName);
-                        _logger.LogDebug("监控文件:'{0}'被写入到文件池:'{1}'.", file.FullName, Option.Name);
+                        _logger.LogWarning("正在进行监控目录的扫描,不会重复进入.文件池:'{0}',监控路径:{1}.", Option.Name, Option.FileWatcherPath);
+                    
+                        await Task.Delay(Option.ScanFileWatcherMillSeconds);
+                        continue;
                     }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "监控目录出现异常,异常信息:{0}.", ex.Message);
-                //throw ex;
-            }
-            finally
-            {
-                try
-                {
-                    if (deleteFiles.Any())
+                    var deleteFiles = new List<string>();
+                    try
                     {
-                        foreach (var deleteFile in deleteFiles)
+                        Interlocked.Exchange(ref _inFileWatcher, 1);
+                        var directoryInfo = new DirectoryInfo(Option.FileWatcherPath);
+                        var files = directoryInfo.GetFiles();
+                        foreach (var file in files)
                         {
-                            FilePathUtil.DeleteFileIfExists(deleteFile);
+                            //最后写入的时间是2秒前
+                            if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
+                            {
+                                var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
+                                var fileExt = FilePathUtil.GetPathExtension(file.Name);
+                                WriteFile(fileStream, fileExt);
+                                //添加到删除列表
+                                deleteFiles.Add(file.FullName);
+                                _logger.LogDebug("监控文件:'{0}'被写入到文件池:'{1}'.", file.FullName, Option.Name);
+                            }
                         }
+
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "删除监控文件出错,异常信息:{0}.", ex.Message);
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "监控目录出现异常,异常信息:{0}.", ex.Message);
+                        //throw ex;
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (deleteFiles.Any())
+                            {
+                                foreach (var deleteFile in deleteFiles)
+                                {
+                                    FilePathUtil.DeleteFileIfExists(deleteFile);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "删除监控文件出错,异常信息:{0}.", ex.Message);
+                        }
+                        Interlocked.Exchange(ref _inFileWatcher, 0);
+                    }
+
+                    await Task.Delay(Option.ScanFileWatcherMillSeconds);
                 }
 
-                Interlocked.Exchange(ref _inFileWatcher, 0);
-            }
-
+            }, _cts.Token);
         }
-        #endregion
 
+        #endregion
 
 
     }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Spool.Scheduling;
 using Spool.Trains;
 using Spool.Utility;
 using Spool.Writers;
@@ -34,7 +33,6 @@ namespace Spool.Tests
             var provider = services.BuildServiceProvider();
             provider.ConfigureSpool();
 
-            Assert.Contains(services, x => x.ServiceType == typeof(IScheduleService));
             Assert.Contains(services, x => x.ServiceType == typeof(ISpoolPool));
             Assert.Contains(services, x => x.ServiceType == typeof(IdGenerator));
             Assert.Contains(services, x => x.ServiceType == typeof(IFilePoolFactory));
