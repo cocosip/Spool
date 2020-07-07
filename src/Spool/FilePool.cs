@@ -290,7 +290,7 @@ namespace Spool
 
                     await Task.Delay(Option.ScanReturnFileMillSeconds);
                 }
-            }, _cts.Token);
+            });
         }
 
         /// <summary>移除指定取走文件
@@ -318,7 +318,7 @@ namespace Spool
                     if (_inFileWatcher == 1)
                     {
                         _logger.LogWarning("正在进行监控目录的扫描,不会重复进入.文件池:'{0}',监控路径:{1}.", Option.Name, Option.FileWatcherPath);
-                    
+
                         await Task.Delay(Option.ScanFileWatcherMillSeconds);
                         continue;
                     }
@@ -370,7 +370,7 @@ namespace Spool
                     await Task.Delay(Option.ScanFileWatcherMillSeconds);
                 }
 
-            }, _cts.Token);
+            });
         }
 
         #endregion
