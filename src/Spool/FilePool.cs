@@ -16,8 +16,7 @@ namespace Spool
     /// </summary>
     public class FilePool : IFilePool
     {
-        private CancellationTokenSource _cts;
-        private int _inFileWatcher = 0;
+        private readonly CancellationTokenSource _cts;
         private int _isRunning = 0;
 
         private readonly ILogger _logger;
@@ -315,19 +314,10 @@ namespace Spool
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    if (_inFileWatcher == 1)
-                    {
-                        _logger.LogWarning("正在进行监控目录的扫描,不会重复进入.文件池:'{0}',监控路径:{1}.", Option.Name, Option.FileWatcherPath);
-
-                        await Task.Delay(Option.ScanFileWatcherMillSeconds);
-                        continue;
-                    }
                     var deleteFiles = new List<string>();
                     try
                     {
-                        Interlocked.Exchange(ref _inFileWatcher, 1);
-                        var directoryInfo = new DirectoryInfo(Option.FileWatcherPath);
-                        var files = directoryInfo.GetFiles();
+                        var files = FilePathUtil.RecursiveGetFileInfos(Option.FileWatcherPath);
                         foreach (var file in files)
                         {
                             //最后写入的时间是2秒前
@@ -364,7 +354,6 @@ namespace Spool
                         {
                             _logger.LogError(ex, "删除监控文件出错,异常信息:{0}.", ex.Message);
                         }
-                        Interlocked.Exchange(ref _inFileWatcher, 0);
                     }
 
                     await Task.Delay(Option.ScanFileWatcherMillSeconds);

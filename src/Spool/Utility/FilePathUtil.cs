@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Spool.Utility
 {
@@ -55,5 +57,21 @@ namespace Spool.Utility
             }
             return false;
         }
+
+        /// <summary>递归获取某个目录下的全部文件
+        /// </summary>
+        public static List<FileInfo> RecursiveGetFileInfos(string path)
+        {
+            var directoryInfo = new DirectoryInfo(path);
+            var files = directoryInfo.GetFiles().ToList();
+            var subDirs = directoryInfo.GetDirectories();
+            foreach (var subDir in subDirs)
+            {
+                var subFiles = RecursiveGetFileInfos(subDir.FullName);
+                files.AddRange(subFiles);
+            }
+            return files;
+        }
+
     }
 }
