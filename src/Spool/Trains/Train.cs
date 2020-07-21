@@ -158,8 +158,8 @@ namespace Spool.Trains
                 //写入队列
                 _pendingQueue.Enqueue(spoolFile);
 
-                //是否写满了
-                if (_pendingQueue.Count > _option.TrainMaxFileCount)
+                //是否写满了(需要按照待处理的文件数量+处理中的数量进行计算,避免当关闭自动归还功能时,磁盘下的文件还有大量的堆积)
+                if (_pendingQueue.Count + _progressingDict.Count > _option.TrainMaxFileCount)
                 {
                     var info = BuildInfo();
                     var args = new TrainWriteOverEventArgs()
