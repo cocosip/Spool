@@ -240,7 +240,7 @@ namespace Spool
         /// </summary>
         private IFilePool GetFilePool(string poolName)
         {
-            if (!string.IsNullOrWhiteSpace(poolName))
+            if (string.IsNullOrWhiteSpace(poolName))
             {
                 poolName = Option.DefaultPool;
             }

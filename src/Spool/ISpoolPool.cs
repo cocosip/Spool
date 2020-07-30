@@ -81,7 +81,7 @@ namespace Spool
 
         /// <summary>获取取走的数量
         /// </summary>
-        public int GetProcessingCount(string poolName = "");
+        int GetProcessingCount(string poolName = "");
 
         /// <summary>运行
         /// </summary>
