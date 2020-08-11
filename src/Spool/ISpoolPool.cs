@@ -8,13 +8,9 @@ namespace Spool
     /// </summary>
     public interface ISpoolPool
     {
-        /// <summary>运行状态
-        /// </summary>
-        bool IsRunning { get; }
-
-        /// <summary>配置信息
-        /// </summary>
-        SpoolOption Option { get; }
+        ///// <summary>配置信息
+        ///// </summary>
+        //SpoolOption Option { get; }
 
         /// <summary>写入文件事件
         /// </summary>
@@ -83,12 +79,9 @@ namespace Spool
         /// </summary>
         int GetProcessingCount(string poolName = "");
 
-        /// <summary>运行
+        /// <summary>
+        /// 释放
         /// </summary>
-        void Start();
-
-        /// <summary>关闭
-        /// </summary>
-        void Shutdown();
+        void Dispose();
     }
 }

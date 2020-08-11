@@ -16,43 +16,37 @@ namespace Spool.Demo
         static int FilePoolCount = 1;
         static void Main(string[] args)
         {
-
-            var spoolOption = new SpoolOption()
-            {
-                DefaultPool = "pool1"
-            };
-            for (int i = 0; i < FilePoolCount; i++)
-            {
-                spoolOption.FilePools.Add(new FilePoolDescriptor()
-                {
-                    Name = $"pool{i}",
-                    Path = $"D:\\SpoolTest\\pool{i}",
-                    MaxFileWriterCount = 50,
-                    TrainMaxFileCount = 1000,
-                    ConcurrentFileWriterCount = 3,
-                    WriteBufferSize = 1024 * 1024 * 2,
-                    EnableAutoReturn = true,
-                    AutoReturnSeconds = 10,
-                    ScanReturnFileMillSeconds = 1000,
-                    EnableFileWatcher = false,
-                    FileWatcherPath = $"D:\\pool_watcher{i}",
-                    ScanFileWatcherMillSeconds = 5000,
-                });
-            }
-
-
             IServiceCollection services = new ServiceCollection();
-
             services
                 .AddLogging(l =>
                 {
                     l.AddConsole()
                     .SetMinimumLevel(LogLevel.Debug);
                 })
-                .AddSpool(spoolOption);
+                .AddSpool(c=>
+                {
+                    c.DefaultPool = "pool1";
+                    for (int i = 0; i < FilePoolCount; i++)
+                    {
+                        c.FilePools.Add(new FilePoolDescriptor()
+                        {
+                            Name = $"pool{i}",
+                            Path = $"D:\\SpoolTest\\pool{i}",
+                            MaxFileWriterCount = 50,
+                            TrainMaxFileCount = 1000,
+                            ConcurrentFileWriterCount = 3,
+                            WriteBufferSize = 1024 * 1024 * 2,
+                            EnableAutoReturn = true,
+                            AutoReturnSeconds = 10,
+                            ScanReturnFileMillSeconds = 1000,
+                            EnableFileWatcher = false,
+                            FileWatcherPath = $"D:\\pool_watcher{i}",
+                            ScanFileWatcherMillSeconds = 5000,
+                        });
+                    }
+                });
 
             Provider = services.BuildServiceProvider();
-            Provider.ConfigureSpool();
 
             Console.WriteLine("初始化完成!");
 
@@ -70,14 +64,17 @@ namespace Spool.Demo
         public static void WriteFileTest()
         {
             var spoolPool = Provider.GetService<ISpoolPool>();
-            var buffer = File.ReadAllBytes(@"D:\DicomTests\FILE0.dcm");
+            var filePath = @"D:\DicomTests\1.jpg";
+
+            var buffer = File.ReadAllBytes(filePath);
             for (int i = 0; i < FilePoolCount; i++)
             {
                 var total = 100000;
                 var currentWrite = 0;
                 //var buffer = File.ReadAllBytes(@"D:\FILE0.dcm");
                 var poolName = $"pool{i}";
-                var ext = ".dcm";
+
+                var ext = Path.GetExtension(filePath);
                 Task.Run(async () =>
                 {
                     while (currentWrite < total)

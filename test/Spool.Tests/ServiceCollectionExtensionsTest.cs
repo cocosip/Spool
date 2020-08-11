@@ -16,22 +16,22 @@ namespace Spool.Tests
         public void AddSpool_Test()
         {
             IServiceCollection services = new ServiceCollection();
-            services.AddLogging()
-                .AddSpool(new SpoolOption()
+            services
+                .AddLogging()
+                .AddSpool(c =>
                 {
-                    DefaultPool = "Pool111",
-                    FilePools = new List<FilePoolDescriptor>()
+                    c.DefaultPool = "Pool111";
+                    c.FilePools = new List<FilePoolDescriptor>()
                     {
                         new FilePoolDescriptor()
                         {
                             Name="Pool2",
                             Path= Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Setup_Pool2")
                         }
-                    }
+                    };
                 });
 
             var provider = services.BuildServiceProvider();
-            provider.ConfigureSpool();
 
             Assert.Contains(services, x => x.ServiceType == typeof(ISpoolPool));
             Assert.Contains(services, x => x.ServiceType == typeof(IdGenerator));
@@ -48,7 +48,7 @@ namespace Spool.Tests
             Assert.Contains(services, x => x.ServiceType == typeof(TrainOption));
             var option = provider.GetService<IOptions<SpoolOption>>().Value;
 
-            Assert.Equal("Pool2", option.DefaultPool);
+            Assert.Equal("Pool111", option.DefaultPool);
             Assert.Single(option.FilePools);
 
         }

@@ -14,9 +14,6 @@ namespace Spool
     /// </summary>
     public class SpoolPool : ISpoolPool
     {
-        /// <summary>运行状态
-        /// </summary>
-        public bool IsRunning { get { return _isRunning == 1; } }
 
         /// <summary>写入文件事件
         /// </summary>
@@ -34,14 +31,13 @@ namespace Spool
         /// </summary>
         public event EventHandler<ReturnFileEventArgs> OnFileReturn;
 
-        /// <summary>配置信息
-        /// </summary>
-        public SpoolOption Option { get; private set; }
 
         private readonly ILogger _logger;
+        private readonly SpoolOption _option;
+        private readonly IFilePoolDescriptorSelector _filePoolDescriptorSelector;
         private readonly IFilePoolFactory _filePoolFactory;
 
-        private int _isRunning = 0;
+        private object SyncObject = new object();
 
         /// <summary>文件池集合
         /// </summary>
@@ -49,10 +45,11 @@ namespace Spool
 
         /// <summary>ctor
         /// </summary>
-        public SpoolPool(ILogger<SpoolPool> logger, IOptions<SpoolOption> option, IFilePoolFactory filePoolFactory)
+        public SpoolPool(ILogger<SpoolPool> logger, IOptions<SpoolOption> options, IFilePoolDescriptorSelector filePoolDescriptorSelector, IFilePoolFactory filePoolFactory)
         {
             _logger = logger;
-            Option = option.Value;
+            _option = options.Value;
+            _filePoolDescriptorSelector = filePoolDescriptorSelector;
             _filePoolFactory = filePoolFactory;
 
             _filePoolDict = new ConcurrentDictionary<string, IFilePool>();
@@ -134,12 +131,6 @@ namespace Spool
         {
             var filePool = GetFilePool(poolName);
             filePool.ReturnFiles(spoolFiles);
-
-            OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
-            {
-                FilePoolName = filePool.Option.Name,
-                SpoolFiles = spoolFiles
-            });
         }
 
         /// <summary>释放文件
@@ -174,66 +165,30 @@ namespace Spool
             return filePool.GetProcessingCount();
         }
 
-        /// <summary>运行
+        /// <summary>
+        /// 释放
         /// </summary>
-        public void Start()
+        public void Dispose()
         {
-            if (_isRunning == 1)
+            foreach (var filePool in _filePoolDict.Values)
             {
-                _logger.LogInformation("SpoolPool已经正在运行,请不要重复启动!");
-                return;
-            }
-
-            //判断是否有文件池
-            if (!Option.FilePools.Any())
-            {
-                throw new ArgumentException("不存在任何文件池!");
-            }
-            //设置默认文件池名称
-            if (!string.IsNullOrWhiteSpace(Option.DefaultPool))
-            {
-                if (!Option.FilePools.Any(x => string.Equals(x.Name, Option.DefaultPool, StringComparison.OrdinalIgnoreCase)))
-                {
-                    Option.DefaultPool = Option.FilePools.FirstOrDefault()?.Name;
-                }
-            }
-
-            foreach (var descriptor in Option.FilePools)
-            {
-                var filePool = _filePoolFactory.CreateFilePool(descriptor);
-                if (!_filePoolDict.TryAdd(descriptor.Name, filePool))
-                {
-                    _logger.LogWarning("添加文件池FilePool到集合失败,文件池名:{0},文件池路径:{1}", descriptor.Name, descriptor.Path);
-                }
-                //判断当前是否有绑定归还事件
                 if (OnFileReturn != null)
                 {
-                    filePool.OnFileReturn += (o, e) =>
-                    {
-                        OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
-                        {
-                            FilePoolName = e.FilePoolName,
-                            SpoolFiles = e.SpoolFiles
-                        });
-                    };
+                    filePool.OnFileReturn += FilePool_OnFileReturn;
                 }
-                filePool.Start();
-            }
 
-            Interlocked.Exchange(ref _isRunning, 1);
+                filePool.Shutdown();
+            }
         }
 
-        /// <summary>关闭
+        /// <summary>
+        /// 文件归还事件
         /// </summary>
-        public void Shutdown()
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FilePool_OnFileReturn(object sender, ReturnFileEventArgs e)
         {
-            if (_isRunning == 0)
-            {
-                _logger.LogInformation("SpoolPool已经关闭,请不要重复关闭!");
-                return;
-            }
-
-            Interlocked.Exchange(ref _isRunning, 0);
+            OnFileReturn?.Invoke(this, e);
         }
 
         /// <summary>根据组名获取文件池
@@ -242,15 +197,42 @@ namespace Spool
         {
             if (string.IsNullOrWhiteSpace(poolName))
             {
-                poolName = Option.DefaultPool;
+                poolName = _option.DefaultPool;
             }
 
             if (!_filePoolDict.TryGetValue(poolName, out IFilePool filePool))
             {
-                throw new ArgumentException($"未找到名为'{poolName}' 的文件池,请检查配置.");
+
+                lock (SyncObject)
+                {
+                    if (!_filePoolDict.TryGetValue(poolName, out filePool))
+                    {
+                        var filePoolDescriptor = _filePoolDescriptorSelector.GetDescriptor(poolName);
+                        filePool = _filePoolFactory.CreateFilePool(filePoolDescriptor);
+
+                        //判断当前是否有绑定归还事件
+                        if (OnFileReturn != null)
+                        {
+                            filePool.OnFileReturn += FilePool_OnFileReturn;
+                        }
+
+                        if (_filePoolDict.TryAdd(poolName, filePool))
+                        {
+                            filePool.Start();
+                        }
+                        else
+                        {
+                            _logger.LogWarning("添加新建的文件池:{0}失败!", poolName);
+                        }
+                    }
+                }
             }
+
             return filePool;
         }
+
+
+
 
     }
 }
