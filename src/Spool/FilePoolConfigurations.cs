@@ -1,32 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Spool
 {
-    /// <summary>
-    /// File pool configuration aggregation
-    /// </summary>
     public class FilePoolConfigurations
     {
         private FilePoolConfiguration Default => GetConfiguration<DefaultFilePool>();
 
         private readonly Dictionary<string, FilePoolConfiguration> _filePools;
 
-        /// <summary>
-        /// Ctor
-        /// </summary>
         public FilePoolConfigurations()
         {
             _filePools = new Dictionary<string, FilePoolConfiguration>()
             {
-                //Add default container
+                //添加默认的文件池
                 [FilePoolNameAttribute.GetFilePoolName<DefaultFilePool>()] = new FilePoolConfiguration()
             };
         }
 
         /// <summary>
-        /// Configure file pool 
+        /// 根据泛型类型配置文件池
         /// </summary>
         /// <typeparam name="TFilePool"></typeparam>
         /// <param name="configureAction"></param>
@@ -41,7 +34,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure file pool 
+        /// 根据名称配置文件池
         /// </summary>
         /// <param name="name"></param>
         /// <param name="configureAction"></param>
@@ -63,7 +56,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure default file pool 
+        /// 配置默认的文件池
         /// </summary>
         /// <param name="configureAction"></param>
         /// <returns></returns>
@@ -74,7 +67,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure all file pools 
+        /// 配置全部的文件池
         /// </summary>
         /// <param name="configureAction"></param>
         /// <returns></returns>
@@ -89,7 +82,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Get file pool configuration
+        /// 根据泛型类型获取文件池配置
         /// </summary>
         /// <typeparam name="TFilePool"></typeparam>
         /// <returns></returns>
@@ -99,7 +92,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Get file pool configuration by name
+        /// 根据名称获取文件池配置
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>

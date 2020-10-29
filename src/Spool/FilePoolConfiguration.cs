@@ -1,7 +1,7 @@
 ﻿namespace Spool
 {
     /// <summary>
-    /// File pool configuration
+    /// 文件池配置信息
     /// </summary>
     public class FilePoolConfiguration
     {
@@ -44,6 +44,11 @@
         /// 监控目录
         /// </summary>
         public string FileWatcherPath { get; set; }
+
+        /// <summary>
+        /// 监控目录拷贝到文件池中的线程数量
+        /// </summary>
+        public int FileWatcherCopyThread { get; set; }
 
         /// <summary>
         /// 扫描监控目录的间隔(毫秒)

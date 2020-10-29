@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Spool
+﻿namespace Spool
 {
-    /// <summary>
-    /// Spool options configuration
-    /// </summary>
     public class SpoolOptions
     {
+        public FilePoolConfigurations FilePools { get; }
 
+        public SpoolOptions()
+        {
+            FilePools = new FilePoolConfigurations();
+        }
     }
 }
