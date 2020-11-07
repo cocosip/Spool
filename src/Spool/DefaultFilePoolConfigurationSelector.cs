@@ -2,17 +2,24 @@
 
 namespace Spool
 {
+    /// <summary>
+    /// File pool configuration selector from configuration
+    /// </summary>
     public class DefaultFilePoolConfigurationSelector : IFilePoolConfigurationSelector
     {
         private readonly SpoolOptions _options;
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="options"></param>
         public DefaultFilePoolConfigurationSelector(IOptions<SpoolOptions> options)
         {
             _options = options.Value;
         }
 
         /// <summary>
-        /// 根据名称获取文件池配置
+        /// Get file pool configuration by name
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
