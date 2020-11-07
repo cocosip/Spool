@@ -162,7 +162,7 @@ namespace Spool.Trains
                 var path = GenerateFilePath(fileExt);
                 spoolFile.Path = path;
                 //Write file
-                WriteInternal(stream, fileExt);
+                WriteInternal(stream, path);
 
                 //Write queue
                 _pendingQueue.Enqueue(spoolFile);
@@ -384,13 +384,13 @@ namespace Spool.Trains
 
         private void WriteInternal(Stream stream, string path)
         {
-            using (FileStream fw = File.OpenWrite(path))
+            using (FileStream fs = File.OpenWrite(path))
             {
                 var buffers = new byte[_configuration.WriteBufferSize];
                 int r = stream.Read(buffers, 0, buffers.Length);
                 while (r > 0)
                 {
-                    fw.Write(buffers, 0, r);
+                    fs.Write(buffers, 0, r);
                     r = stream.Read(buffers, 0, buffers.Length);
                 }
             }

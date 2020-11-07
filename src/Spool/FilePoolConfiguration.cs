@@ -28,7 +28,7 @@
         /// <summary>
         /// Enable file watcher
         /// </summary>
-        public bool EnableFileWatcher { get; set; }
+        public bool EnableFileWatcher { get; set; } = false;
 
         /// <summary>
         /// File watcher path
@@ -38,7 +38,7 @@
         /// <summary>
         /// Copy watcher folder file to file pool thread
         /// </summary>
-        public int FileWatcherCopyThread { get; set; }
+        public int FileWatcherCopyThread { get; set; } = 1;
 
         /// <summary>
         /// Scan file watecher path interval(ms)
@@ -53,11 +53,11 @@
         /// <summary>
         /// Scan wait return file interval(ms)
         /// </summary>
-        public int ScanReturnFileMillSeconds { get; set; }
+        public int ScanReturnFileMillSeconds { get; set; } = 3000;
 
         /// <summary>
         /// Reutrn file expired time(s), beyond this time will automatic return file
         /// </summary>
-        public int AutoReturnSeconds { get; set; }
+        public int AutoReturnSeconds { get; set; } = 300;
     }
 }
