@@ -109,11 +109,13 @@ namespace Spool
     {
         private bool _isSetup = false;
         private readonly ManualResetEventSlim _sync;
-        private Timer _autoReturnTimer = null;
-        private Timer _fileWatcherTimer = null;
 
         private readonly ILogger _logger;
+        private readonly IScheduleService _scheduleService;
         private readonly ITrainFactory _trainFactory;
+
+        private readonly string _autoReturnFilesTaskName = "Spool.AutoReturnFiles";
+        private readonly string _fileWatcherTaskName = "Spool.FileWatcher";
 
         private readonly ConcurrentDictionary<int, ITrain> _trainDict;
         private readonly ConcurrentDictionary<string, SpoolFileFuture> _processingFileDict;
@@ -123,14 +125,19 @@ namespace Spool
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="configuration"></param>
+        /// <param name="scheduleService"></param>
         /// <param name="trainFactory"></param>
-        public FilePool(ILogger<FilePool> logger, FilePoolConfiguration configuration, ITrainFactory trainFactory)
+        public FilePool(ILogger<FilePool> logger, FilePoolConfiguration configuration, IScheduleService scheduleService, ITrainFactory trainFactory)
         {
             _logger = logger;
             Configuration = configuration;
+            _scheduleService = scheduleService;
             _trainFactory = trainFactory;
 
             _sync = new ManualResetEventSlim(true);
+
+            _autoReturnFilesTaskName = $"{_autoReturnFilesTaskName}.{configuration.Name}";
+            _fileWatcherTaskName = $"{_fileWatcherTaskName}.{configuration.Name}";
 
             _trainDict = new ConcurrentDictionary<int, ITrain>();
             _processingFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
@@ -164,7 +171,7 @@ namespace Spool
             //AutoReturnFiles
             if (Configuration.EnableAutoReturn)
             {
-                StartScanTimeoutFiles();
+                StartScanReturnFiles();
             }
 
             //FileWatcher
@@ -198,8 +205,11 @@ namespace Spool
             if (spoolFiles.Count < count)
             {
                 var secondTrain = GetReadTrain();
-                var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
-                spoolFiles.AddRange(secondSpoolFiles);
+                if (secondTrain != null)
+                {
+                    var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
+                    spoolFiles.AddRange(secondSpoolFiles);
+                }
             }
 
             //Enable auto reutn
@@ -633,9 +643,9 @@ namespace Spool
         /// <summary>
         /// Scan time out files
         /// </summary>
-        private void StartScanTimeoutFiles()
+        private void StartScanReturnFiles()
         {
-            _autoReturnTimer = new Timer(x =>
+            _scheduleService.StartTask(_autoReturnFilesTaskName, () =>
             {
                 try
                 {
@@ -663,9 +673,9 @@ namespace Spool
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "扫描过期未归还文件出现异常,异常信息:{0}.", ex.Message);
+                    _logger.LogError(ex, "Scan return files caught exception,{0}", ex.Message);
                 }
-            }, null, 5000, Configuration.ScanReturnFileMillSeconds);
+            }, 5000, Configuration.ScanReturnFileMillSeconds);
         }
 
         /// <summary>
@@ -673,7 +683,7 @@ namespace Spool
         /// </summary>
         private void StartScanFileWatcher()
         {
-            _fileWatcherTimer = new Timer(async x =>
+            _scheduleService.StartTask(_fileWatcherTaskName, async () =>
             {
                 var deleteFiles = new List<string>();
                 try
@@ -716,8 +726,7 @@ namespace Spool
                         _logger.LogError(ex, "Delete watcher file exception:{0}.", ex.Message);
                     }
                 }
-            }, null, 5000, Configuration.ScanFileWatcherMillSeconds);
-
+            }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
 
         /// <summary>
@@ -725,8 +734,8 @@ namespace Spool
         /// </summary>
         public void Dispose()
         {
-            _fileWatcherTimer?.Dispose();
-            _autoReturnTimer?.Dispose();
+            _scheduleService.StopTask(_autoReturnFilesTaskName);
+            _scheduleService.StopTask(_fileWatcherTaskName);
         }
     }
 }

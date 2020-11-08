@@ -49,7 +49,6 @@ namespace Spool
              string name,
              Action<FilePoolConfiguration> configureAction)
         {
-
             if (!_filePools.TryGetValue(name, out FilePoolConfiguration configuration))
             {
                 configuration = new FilePoolConfiguration();

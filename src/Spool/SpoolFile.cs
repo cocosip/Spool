@@ -81,6 +81,11 @@ namespace Spool
         /// <returns></returns>
         public bool Equals(SpoolFile other)
         {
+            if (other == null)
+            {
+                return false;
+            }
+
             return FilePool == other.FilePool && TrainIndex == other.TrainIndex && Path == other.Path;
         }
 
@@ -108,20 +113,20 @@ namespace Spool
             return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(Path) | TrainIndex.GetHashCode();
         }
 
-        /// <summary>
-        /// SpoolFile == SpoolFile
-        /// </summary>
-        /// <param name="f1"></param>
-        /// <param name="f2"></param>
-        /// <returns></returns>
-        public static bool operator ==(SpoolFile f1, SpoolFile f2) => f1.Equals(f2);
+        ///// <summary>
+        ///// SpoolFile == SpoolFile
+        ///// </summary>
+        ///// <param name="f1"></param>
+        ///// <param name="f2"></param>
+        ///// <returns></returns>
+        //public static bool operator ==(SpoolFile f1, SpoolFile f2) => f1.Equals(f2);
 
-        /// <summary>
-        /// SpoolFile != SpoolFile
-        /// </summary>
-        /// <param name="f1"></param>
-        /// <param name="f2"></param>
-        /// <returns></returns>
-        public static bool operator !=(SpoolFile f1, SpoolFile f2) => !f1.Equals(f2);
+        ///// <summary>
+        ///// SpoolFile != SpoolFile
+        ///// </summary>
+        ///// <param name="f1"></param>
+        ///// <param name="f2"></param>
+        ///// <returns></returns>
+        //public static bool operator !=(SpoolFile f1, SpoolFile f2) => !f1.Equals(f2);
     }
 }

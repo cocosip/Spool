@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spool.Trains;
+using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
 
@@ -75,7 +76,8 @@ namespace Spool
             }
             var logger = _serviceProvider.GetService<ILogger<FilePool>>();
             var trainFactory = _serviceProvider.GetService<ITrainFactory>();
-            IFilePool filePool = new FilePool(logger, configuration, trainFactory);
+            var scheduleService = _serviceProvider.GetService<IScheduleService>();
+            IFilePool filePool = new FilePool(logger, configuration, scheduleService, trainFactory);
             _logger.LogDebug("Create a new file pool by name '{0}'", name);
             return filePool;
         }
