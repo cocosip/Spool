@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Spool.Extensions;
+using Spool.Events;
 using Spool.Trains;
 using Spool.Utility;
 using System;
@@ -12,358 +12,730 @@ using System.Threading.Tasks;
 
 namespace Spool
 {
-    /// <summary>文件池
+    /// <summary>
+    /// File pool
+    /// </summary>
+    /// <typeparam name="TFilePool"></typeparam>
+    public class FilePool<TFilePool> : IFilePool<TFilePool> where TFilePool : class
+    {
+        private readonly IFilePool _filePool;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public FilePool(IFilePoolFactory filePoolFactory)
+        {
+            _filePool = filePoolFactory.GetOrCreate<TFilePool>();
+        }
+
+        /// <summary>
+        /// Setup
+        /// </summary>
+        public void Setup()
+        {
+            _filePool.Setup();
+        }
+
+        /// <summary>
+        /// Gets the specified number of files
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public List<SpoolFile> GetFiles(int count = 1)
+        {
+            return _filePool.GetFiles(count);
+        }
+
+        /// <summary>
+        /// Write file
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        public Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        {
+            return _filePool.WriteFileAsync(stream, fileExt);
+        }
+
+        /// <summary>
+        /// Return files to file pool
+        /// </summary>
+        /// <param name="files"></param>
+        public void ReturnFiles(params SpoolFile[] files)
+        {
+            _filePool.ReturnFiles(files);
+        }
+
+        /// <summary>
+        /// Release files
+        /// </summary>
+        /// <param name="files"></param>
+        public void ReleaseFiles(params SpoolFile[] files)
+        {
+            _filePool.ReleaseFiles(files);
+        }
+
+        /// <summary>
+        /// Get pending files count
+        /// </summary>
+        /// <returns></returns>
+        public int GetPendingCount()
+        {
+            return _filePool.GetPendingCount();
+        }
+
+        /// <summary>
+        /// Get processing files count
+        /// </summary>
+        /// <returns></returns>
+        public int GetProcessingCount()
+        {
+            return _filePool.GetProcessingCount();
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            //do nothing
+        }
+    }
+
+    /// <summary>
+    /// File pool
     /// </summary>
     public class FilePool : IFilePool
     {
-        private readonly CancellationTokenSource _cts;
-        private int _isRunning = 0;
+        private bool _isSetup = false;
+        private readonly ManualResetEventSlim _sync;
 
         private readonly ILogger _logger;
+        private readonly IScheduleService _scheduleService;
         private readonly ITrainFactory _trainFactory;
 
-        /// <summary>文件池的配置信息
-        /// </summary>
-        public FilePoolOption Option { get; private set; }
+        private readonly string _autoReturnFilesTaskName = "Spool.AutoReturnFiles";
+        private readonly string _fileWatcherTaskName = "Spool.FileWatcher";
 
-        /// <summary>是否正在运行
-        /// </summary>
-        public bool IsRunning { get { return _isRunning == 1; } }
+        private readonly ConcurrentDictionary<int, ITrain> _trainDict;
+        private readonly ConcurrentDictionary<string, SpoolFileFuture> _processingFileDict;
 
-        /// <summary>归还文件事件
+        /// <summary>
+        /// Ctor
         /// </summary>
-        public event EventHandler<ReturnFileEventArgs> OnFileReturn;
-
-        /// <summary>被取走的文件
-        /// </summary>
-        private readonly ConcurrentDictionary<string, SpoolFileFuture> _takeFileDict;
-
-        /// <summary>Ctor
-        /// </summary>
-        public FilePool(ILogger<FilePool> logger, ITrainFactory trainFactory, FilePoolOption option)
+        /// <param name="logger"></param>
+        /// <param name="configuration"></param>
+        /// <param name="scheduleService"></param>
+        /// <param name="trainFactory"></param>
+        public FilePool(ILogger<FilePool> logger, FilePoolConfiguration configuration, IScheduleService scheduleService, ITrainFactory trainFactory)
         {
             _logger = logger;
+            Configuration = configuration;
+            _scheduleService = scheduleService;
             _trainFactory = trainFactory;
-            Option = option;
 
-            _cts = new CancellationTokenSource();
-            _takeFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
+            _sync = new ManualResetEventSlim(true);
+
+            _autoReturnFilesTaskName = $"{_autoReturnFilesTaskName}.{configuration.Name}";
+            _fileWatcherTaskName = $"{_fileWatcherTaskName}.{configuration.Name}";
+
+            _trainDict = new ConcurrentDictionary<int, ITrain>();
+            _processingFileDict = new ConcurrentDictionary<string, SpoolFileFuture>();
         }
 
-        /// <summary>运行文件池
+        /// <summary>
+        /// File pool configuration
         /// </summary>
-        public void Start()
+        public FilePoolConfiguration Configuration { get; }
+
+        /// <summary>
+        /// Setup file pool
+        /// </summary>
+        public void Setup()
         {
-            if (_isRunning == 1)
+            if (_isSetup)
             {
-                _logger.LogInformation("当前FilePool:'{0}',路径:{1},正在运行,请勿重复运行。", Option.Name, Option.Path);
+                _logger.LogDebug("File pool '{0}' has been setuped!", Configuration.Name);
                 return;
             }
-            //序列启动
-            Initialize();
 
-            //文件夹监控
-            if (Option.EnableAutoReturn)
+            //Create current file pool 
+            if (FilePathUtil.CreateIfNotExists(Configuration.Path))
             {
-                StartScanTimeoutFile();
+                _logger.LogDebug("Create file pool '{0}' file directory '{1}'.", Configuration.Name, Configuration.Path);
             }
 
-            //文件夹监控
-            if (Option.EnableFileWatcher)
+            //Initialize trains
+            InitializeTrains();
+
+            //AutoReturnFiles
+            if (Configuration.EnableAutoReturn)
             {
-                if (string.IsNullOrWhiteSpace(Option.FileWatcherPath))
+                StartScanReturnFiles();
+            }
+
+            //FileWatcher
+            if (Configuration.EnableFileWatcher)
+            {
+                if (string.IsNullOrWhiteSpace(Configuration.FileWatcherPath))
                 {
-                    throw new ArgumentException("监控目录为空,无法启动监控功能!");
+                    throw new ArgumentException("FileWatcherPath was null!");
                 }
-                if (FilePathUtil.CreateIfNotExists(Option.FileWatcherPath))
+                if (FilePathUtil.CreateIfNotExists(Configuration.FileWatcherPath))
                 {
-                    _logger.LogInformation("创建文件池:'{0}'的监控目录:'{1}'.", Option.Name, Option.FileWatcherPath);
+                    _logger.LogInformation("Creat file pool '{0}' file watcher in '{1}'.", Configuration.Name, Configuration.FileWatcherPath);
                 }
 
                 StartScanFileWatcher();
             }
 
-            Interlocked.Exchange(ref _isRunning, 1);
+            _logger.LogDebug("File pool '{0}' setup complete !", Configuration.Name);
+            _isSetup = true;
         }
 
-        /// <summary>关闭文件池
+        /// <summary>
+        /// Gets the specified number of files
         /// </summary>
-        public void Shutdown()
-        {
-            if (_isRunning == 0)
-            {
-                _logger.LogInformation("当前FilePool:'{0}',路径:{1},已停止,请勿重复操作。", Option.Name, Option.Path);
-                return;
-            }
-
-            _cts.Cancel();
-
-            Interlocked.Exchange(ref _isRunning, 0);
-        }
-
-        /// <summary>写文件
-        /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
+        /// <param name="count"></param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        public List<SpoolFile> GetFiles(int count = 1)
         {
-            var train = _trainFactory.GetWriteTrain();
-            return await train.WriteFileAsync(stream, fileExt);
-        }
-
-        /// <summary>写文件
-        /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
-        /// <returns></returns>
-        public SpoolFile WriteFile(Stream stream, string fileExt)
-        {
-            var train = _trainFactory.GetWriteTrain();
-            return train.WriteFile(stream, fileExt);
-        }
-
-        /// <summary>获取指定数量的文件
-        /// </summary>
-        /// <param name="count">数量</param>
-        /// <returns></returns>
-        public SpoolFile[] GetFiles(int count = 1)
-        {
-            var train = _trainFactory.GetReadTrain();
-            var spoolFiles = train.GetFiles(count).ToList();
+            var train = GetReadTrain();
+            var spoolFiles = train.GetFiles(count);
             if (spoolFiles.Count < count)
             {
-                var secondTrain = _trainFactory.GetReadTrain();
-                var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
-                spoolFiles.AddRange(secondSpoolFiles);
+                var secondTrain = GetReadTrain();
+                if (secondTrain != null)
+                {
+                    var secondSpoolFiles = secondTrain.GetFiles(count - spoolFiles.Count);
+                    spoolFiles.AddRange(secondSpoolFiles);
+                }
             }
 
-            //是否启动自动归还功能
-            if (Option.EnableAutoReturn)
+            //Enable auto reutn
+            if (Configuration.EnableAutoReturn)
             {
                 foreach (var spoolFile in spoolFiles)
                 {
                     var key = spoolFile.GenerateCode();
-                    if (_takeFileDict.ContainsKey(key))
+                    if (_processingFileDict.ContainsKey(key))
                     {
-                        _logger.LogDebug("当前取走的文件中已经包含了该文件,文件Key:'{0}'.", key);
+                        _logger.LogDebug("Processing file dict has contain this file '{0}'.", key);
                     }
                     else
                     {
-                        var spoolFileFuture = new SpoolFileFuture(spoolFile, Option.AutoReturnSeconds);
-                        if (!_takeFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
+                        var spoolFileFuture = new SpoolFileFuture(spoolFile, Configuration.AutoReturnSeconds);
+                        if (!_processingFileDict.TryAdd(spoolFile.GenerateCode(), spoolFileFuture))
                         {
-                            _logger.LogWarning("添加待归还的文件失败:{0}", spoolFile);
+                            _logger.LogWarning("File pool add processing file failed ,{0}.", spoolFile);
                         }
                     }
                 }
             }
-            return spoolFiles.ToArray();
+            return spoolFiles;
         }
 
-        /// <summary>归还数据
+        /// <summary>
+        /// Write file
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
-        public void ReturnFiles(params SpoolFile[] spoolFiles)
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
-            var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
+            var train = GetWriteTrain();
+            return await train.WriteFileAsync(stream, fileExt);
+        }
+
+        /// <summary>
+        /// Return files to file pool
+        /// </summary>
+        /// <param name="files"></param>
+        public void ReturnFiles(params SpoolFile[] files)
+        {
+            var groupSpoolFiles = files.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
-                var train = _trainFactory.GetTrainByIndex(groupSpoolFile.Key);
+                var train = GetTrainByIndex(groupSpoolFile.Key);
                 if (train != null)
                 {
                     train.ReturnFiles(groupSpoolFile.ToArray());
                 }
                 else
                 {
-                    _logger.LogWarning("归还数据时,未找到序列号为:'{0}'的序列,该序列可能已经被释放。", groupSpoolFile.Key);
+                    _logger.LogWarning("Return file '{0}' failed, it may be removed。", groupSpoolFile.Key);
                 }
             }
 
-            //自动归还,需要移除文件
-            if (Option.EnableAutoReturn)
+            if (Configuration.EnableAutoReturn)
             {
-                TryRemoveTakeFiles(spoolFiles);
+                TryRemoveProcessingFiles(files);
             }
-
-            OnFileReturn?.Invoke(this, new ReturnFileEventArgs()
-            {
-                FilePoolName = Option.Name,
-                SpoolFiles = spoolFiles
-            });
         }
 
-        /// <summary>释放文件
+        /// <summary>
+        ///  Release files
         /// </summary>
-        public void ReleaseFiles(params SpoolFile[] spoolFiles)
+        /// <param name="files"></param>
+        public void ReleaseFiles(params SpoolFile[] files)
         {
-            var groupSpoolFiles = spoolFiles.GroupBy(x => x.TrainIndex);
+            var groupSpoolFiles = files.GroupBy(x => x.TrainIndex);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
-                var train = _trainFactory.GetTrainByIndex(groupSpoolFile.Key);
+                var train = GetTrainByIndex(groupSpoolFile.Key);
                 if (train != null)
                 {
                     train.ReleaseFiles(groupSpoolFile.ToArray());
                 }
                 else
                 {
-                    _logger.LogWarning("释放数据时,未找到序列号为:'{0}'的序列,该序列可能已经被释放。", groupSpoolFile.Key);
+                    _logger.LogWarning("Release file '{0}' failed, it may be removed。", groupSpoolFile.Key);
                 }
             }
 
-            if (Option.EnableAutoReturn)
+            if (Configuration.EnableAutoReturn)
             {
-                TryRemoveTakeFiles(spoolFiles);
+                TryRemoveProcessingFiles(files);
             }
         }
 
-        /// <summary>获取文件数量
+
+
+
+        /// <summary>
+        /// Get pending files count
         /// </summary>
+        /// <returns></returns>
         public int GetPendingCount()
         {
-            var trains = _trainFactory.GetTrains(x => x.TrainType == TrainType.Read || x.TrainType == TrainType.ReadWrite);
+            var trains = _trainDict.Values
+                .Where(x => x.TrainType == TrainType.Read || x.TrainType == TrainType.ReadWrite)
+                .ToList();
             return trains.Sum(x => x.PendingCount);
         }
 
-        /// <summary>获取取走的数量
+        /// <summary>
+        /// Get processing files count
         /// </summary>
+        /// <returns></returns>
         public int GetProcessingCount()
         {
-            return _takeFileDict.Count;
+            return _processingFileDict.Count;
         }
 
-        #region Private method
+        #region Private methods
 
-        /// <summary>初始化
+        /// <summary>
+        /// Initialize trains
         /// </summary>
-        private void Initialize()
+        private void InitializeTrains()
         {
-            //创建目录
-            if (FilePathUtil.CreateIfNotExists(Option.Path))
+            _logger.LogDebug("File pool '{0}' initialize trains begin ...", Configuration.Name);
+            var directoryInfo = new DirectoryInfo(Configuration.Path);
+            var trainDirs = directoryInfo.GetDirectories();
+            foreach (var trainDir in trainDirs)
             {
-                _logger.LogInformation("创建文件池:'{0}' 的文件目录:'{1}'.", Option.Name, Option.Path);
+                if (TrainUtil.IsTrainName(trainDir.Name))
+                {
+                    var index = TrainUtil.GetTrainIndex(trainDir.Name);
+                    var train = _trainFactory.Create(Configuration, index);
+                    _trainDict.AddOrUpdate(index, train, (k, v) => train);
+                }
             }
 
-            //序列管理器初始化
-            _trainFactory.Initialize();
-        }
-
-        /// <summary>扫描过期未归还的文件
-        /// </summary>
-        private void StartScanTimeoutFile()
-        {
-            Task.Run(async () =>
+            //train status
+            if (_trainDict.Count == 0)
             {
-                await Task.Delay(2000);
-
-                while (!_cts.Token.IsCancellationRequested)
+                var train = _trainFactory.Create(Configuration, 1);
+                if (!_trainDict.TryAdd(train.Index, train))
                 {
-                    try
-                    {
-                        var timeoutKeyList = new List<string>();
-                        foreach (var entry in _takeFileDict)
-                        {
-                            if (entry.Value.IsTimeout())
-                            {
-                                timeoutKeyList.Add(entry.Key);
-                            }
-                        }
-                        foreach (var key in timeoutKeyList)
-                        {
-
-                            if (_takeFileDict.TryRemove(key, out SpoolFileFuture spoolFileFuture))
-                            {
-                                ReturnFiles(spoolFileFuture.File);
-                                _logger.LogDebug("归还文件:{0}", spoolFileFuture.File);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("移除过期文件失败,文件Key:{0}", key);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "扫描过期未归还文件出现异常,异常信息:{0}.", ex.Message);
-                    }
-
-                    await Task.Delay(Option.ScanReturnFileMillSeconds);
+                    throw new ArgumentException($"Create train failed for file pool '{Configuration.Name}', train '1' .");
                 }
-            });
+            }
+
+            //Bind default events
+            foreach (var train in _trainDict.Values)
+            {
+                BindDefaultEvents(train);
+                train.Initialize();
+            }
+
+            //Write and read is same train
+            if (_trainDict.Count == 1)
+            {
+                var train = _trainDict.Values.FirstOrDefault();
+                train.ChangeType(TrainType.ReadWrite);
+            }
+
+            //There are more than 2 train before
+            if (_trainDict.Count >= 2)
+            {
+                var latest = _trainDict.Values.OrderByDescending(x => x.Index).FirstOrDefault();
+                latest.ChangeType(TrainType.Write);
+
+                var first = _trainDict.Values.OrderBy(x => x.Index).FirstOrDefault();
+                first.ChangeType(TrainType.Read);
+            }
+
+            _logger.LogDebug("File pool '{0}' initialize trains end ...", Configuration.Name);
+
         }
 
-        /// <summary>移除指定取走文件
+        /// <summary>
+        /// Bind train default event
         /// </summary>
-        private void TryRemoveTakeFiles(params SpoolFile[] spoolFiles)
+        /// <param name="train"></param>
+        private void BindDefaultEvents(ITrain train)
+        {
+            train.OnDelete += Train_OnDelete;
+            train.OnWriteOver += Train_OnWriteOver;
+        }
+
+        /// <summary>
+        /// Unbind train default event
+        /// </summary>
+        /// <param name="train"></param>
+        private void UnBindDefaultEvents(ITrain train)
+        {
+            train.OnDelete -= Train_OnDelete;
+            train.OnWriteOver -= Train_OnWriteOver;
+        }
+
+        /// <summary>
+        /// Train write over
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Train_OnWriteOver(object sender, TrainWriteOverEventArgs e)
+        {
+            _sync.Wait();
+
+            try
+            {
+                _sync.Reset();
+
+                if (_trainDict.TryGetValue(e.Train.Index, out ITrain train))
+                {
+                    //Readwrite -->Read
+                    //Write --> Read
+                    if (train.TrainType == TrainType.ReadWrite || train.TrainType == TrainType.Write)
+                    {
+                        train.ChangeType(TrainType.Read);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Current train type change to read ,but original type was not 'ReadWrite' or 'Write'.");
+                    }
+
+                    //Create new train
+                    var nextIndex = GetLatestNextIndex();
+                    var newWriteTrain = _trainFactory.Create(Configuration, nextIndex);
+                    _trainDict.TryAdd(newWriteTrain.Index, newWriteTrain);
+
+                    BindDefaultEvents(newWriteTrain);
+                    newWriteTrain.Initialize();
+
+                    //Set train type to write
+                    newWriteTrain.ChangeType(TrainType.Write);
+                }
+                else
+                {
+                    _logger.LogInformation("Can't find train when train write over!");
+                }
+
+            }
+            finally
+            {
+                _sync.Set();
+            }
+        }
+
+        /// <summary>
+        /// Train on delete
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Train_OnDelete(object sender, TrainDeleteEventArgs e)
+        {
+            _sync.Wait();
+            try
+            {
+                _sync.Reset();
+                //Remove train from dict
+                if (_trainDict.TryRemove(e.Train.Index, out ITrain train))
+                {
+                    //Delete train files
+                    FilePathUtil.DeleteDirIfExist(e.Train.Path);
+                }
+                else
+                {
+                    _logger.LogWarning("Delete train files failed, file pool '{0}', train:'{1}'.", Configuration.Name, e.Train.Index);
+                }
+
+                //Unbind events
+                if (train != null)
+                {
+                    UnBindDefaultEvents(train);
+                }
+            }
+            finally
+            {
+                _sync.Set();
+            }
+
+        }
+
+        /// <summary>
+        /// Get next train index
+        /// </summary>
+        /// <returns></returns>
+        private int GetLatestNextIndex()
+        {
+            var latestIndex = _trainDict.Keys.OrderByDescending(x => x).FirstOrDefault();
+            return latestIndex + 1;
+        }
+
+        /// <summary>
+        /// Try remove processing fails
+        /// </summary>
+        private void TryRemoveProcessingFiles(params SpoolFile[] spoolFiles)
         {
             foreach (var spoolFile in spoolFiles)
             {
-                //从被取走的队列中移除元素的时候可能会失败,因为定时任务可能已经移除该超时的文件
-                _takeFileDict.TryRemove(spoolFile.GenerateCode(), out SpoolFileFuture _);
+                //The file may has been removed by auto return
+                _processingFileDict.TryRemove(spoolFile.GenerateCode(), out SpoolFileFuture _);
             }
-        }
-
-
-        /// <summary>开始监控文件任务
-        /// </summary>
-        private void StartScanFileWatcher()
-        {
-            Task.Run(async () =>
-            {
-                await Task.Delay(2000);
-
-                while (!_cts.Token.IsCancellationRequested)
-                {
-                    var deleteFiles = new List<string>();
-                    try
-                    {
-                        var files = FilePathUtil.RecursiveGetFileInfos(Option.FileWatcherPath);
-                        foreach (var file in files)
-                        {
-                            //最后写入的时间是2秒前
-                            if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
-                            {
-                                var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
-                                var fileExt = FilePathUtil.GetPathExtension(file.Name);
-                                WriteFile(fileStream, fileExt);
-                                //添加到删除列表
-                                deleteFiles.Add(file.FullName);
-                                _logger.LogDebug("监控文件:'{0}'被写入到文件池:'{1}'.", file.FullName, Option.Name);
-                            }
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "监控目录出现异常,异常信息:{0}.", ex.Message);
-                        //throw ex;
-                    }
-                    finally
-                    {
-                        try
-                        {
-                            if (deleteFiles.Any())
-                            {
-                                foreach (var deleteFile in deleteFiles)
-                                {
-                                    FilePathUtil.DeleteFileIfExists(deleteFile);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "删除监控文件出错,异常信息:{0}.", ex.Message);
-                        }
-                    }
-
-                    await Task.Delay(Option.ScanFileWatcherMillSeconds);
-                }
-
-            });
         }
 
         #endregion
 
+        #region Trains
 
+        /// <summary>
+        /// Get write train
+        /// </summary>
+        public ITrain GetWriteTrain()
+        {
+            _sync.Wait();
+
+            var writeTrain = _trainDict.Values.FirstOrDefault(x => x.TrainType == TrainType.Write || x.TrainType == TrainType.ReadWrite);
+            if (writeTrain == null)
+            {
+                //No write train
+                try
+                {
+                    _sync.Reset();
+                    writeTrain = _trainFactory.Create(Configuration, GetLatestNextIndex());
+
+                    BindDefaultEvents(writeTrain);
+                    writeTrain.Initialize();
+
+                    writeTrain.ChangeType(TrainType.Write);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "File pool '{0}', create new write train failed,Exception:{1}.", Configuration.Name, ex.Message);
+                    throw ex;
+                }
+                finally
+                {
+                    _sync.Set();
+                }
+            }
+            return writeTrain;
+        }
+
+        /// <summary>
+        /// Get read train
+        /// </summary>
+        private ITrain GetReadTrain()
+        {
+            _sync.Wait();
+
+            //Get read train first
+            var readTrain = _trainDict.Values.FirstOrDefault(x => x.TrainType == TrainType.Read && !x.IsPendingEmpty());
+            if (readTrain == null)
+            {
+                //Get default train
+                readTrain = _trainDict.Values.OrderBy(x => x.Index).FirstOrDefault(x => x.TrainType == TrainType.Default);
+
+                //load files
+                if (readTrain != null)
+                {
+                    _sync.Wait();
+
+                    try
+                    {
+                        _sync.Reset();
+                        //To read type
+                        readTrain.ChangeType(TrainType.Read);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "File pool '{0}',convert 'default' type train to 'read' type failed,Exception:{1}.", Configuration.Name, ex.Message);
+                    }
+                    finally
+                    {
+                        _sync.Set();
+                    }
+                }
+            }
+
+            //Get readwrite train
+            if (readTrain == null)
+            {
+                readTrain = _trainDict.Values.FirstOrDefault(x => x.TrainType == TrainType.ReadWrite);
+            }
+
+            if (readTrain == null)
+            {
+                _sync.Wait();
+
+                //Get a write train
+                var writeTrain = _trainDict.Values.OrderByDescending(x => x.Index).FirstOrDefault(x => x.TrainType == TrainType.Write);
+
+                if (writeTrain != null)
+                {
+                    try
+                    {
+                        _sync.Reset();
+                        writeTrain.ChangeType(TrainType.ReadWrite);
+                        return writeTrain;
+                    }
+                    finally
+                    {
+                        _sync.Set();
+                    }
+                }
+            }
+
+            if (readTrain == null)
+            {
+                throw new ArgumentException("Can't find any read train!");
+            }
+            return readTrain;
+        }
+
+        /// <summary>
+        /// Get train by index
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private ITrain GetTrainByIndex(int index)
+        {
+            _sync.Wait();
+            try
+            {
+                if (!_trainDict.TryGetValue(index, out ITrain train))
+                {
+                    _logger.LogWarning("Get train '{0}' faile,this train was not exist or was released.", index);
+                }
+                return train;
+            }
+            finally
+            {
+                _sync.Set();
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Scan time out files
+        /// </summary>
+        private void StartScanReturnFiles()
+        {
+            _scheduleService.StartTask(_autoReturnFilesTaskName, () =>
+            {
+                try
+                {
+                    var timeoutKeyList = new List<string>();
+                    foreach (var entry in _processingFileDict)
+                    {
+                        if (entry.Value.IsTimeout())
+                        {
+                            timeoutKeyList.Add(entry.Key);
+                        }
+                    }
+                    foreach (var key in timeoutKeyList)
+                    {
+
+                        if (_processingFileDict.TryRemove(key, out SpoolFileFuture spoolFileFuture))
+                        {
+                            ReturnFiles(spoolFileFuture.File);
+                            _logger.LogDebug("Auto return file:{0}", spoolFileFuture.File);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Remove expired file failed ,'{0}'", key);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Scan return files caught exception,{0}", ex.Message);
+                }
+            }, 5000, Configuration.ScanReturnFileMillSeconds);
+        }
+
+        /// <summary>
+        /// Enable file watcher
+        /// </summary>
+        private void StartScanFileWatcher()
+        {
+            _scheduleService.StartTask(_fileWatcherTaskName, async () =>
+            {
+                var deleteFiles = new List<string>();
+                try
+                {
+                    var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
+                    foreach (var file in files)
+                    {
+                        //Last write time 2s ago
+                        if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
+                        {
+                            var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
+                            var fileExt = FilePathUtil.GetPathExtension(file.Name);
+                            await WriteFileAsync(fileStream, fileExt);
+                            //Add to delete path
+                            deleteFiles.Add(file.FullName);
+                            _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "File watcher exception:{0}.", ex.Message);
+                    //throw ex;
+                }
+                finally
+                {
+                    try
+                    {
+                        if (deleteFiles.Any())
+                        {
+                            foreach (var deleteFile in deleteFiles)
+                            {
+                                FilePathUtil.DeleteFileIfExists(deleteFile);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Delete watcher file exception:{0}.", ex.Message);
+                    }
+                }
+            }, 5000, Configuration.ScanFileWatcherMillSeconds);
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            _scheduleService.StopTask(_autoReturnFilesTaskName);
+            _scheduleService.StopTask(_fileWatcherTaskName);
+        }
     }
 }

@@ -1,17 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace Spool
+namespace Spool.Events
 {
-    /// <summary>归还文件事件
+    /// <summary>
+    /// Return file event args
     /// </summary>
     public class ReturnFileEventArgs : EventArgs
     {
-        /// <summary>文件池名称
+        /// <summary>
+        /// File pool name
         /// </summary>
-        public string FilePoolName { get; set; }
+        public string FilePool { get; set; }
 
-        /// <summary>被删除的文件
+        /// <summary>
+        /// SpoolFiles
         /// </summary>
-        public SpoolFile[] SpoolFiles { get; set; }
+        public List<SpoolFile> Files { get; set; }
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        public ReturnFileEventArgs()
+        {
+            Files = new List<SpoolFile>();
+        }
     }
 }

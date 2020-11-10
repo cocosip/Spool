@@ -1,32 +1,38 @@
 ﻿namespace Spool.Trains
 {
-    /// <summary>序列信息
+    /// <summary>
+    /// Train info
     /// </summary>
     public class TrainInfo
     {
-        /// <summary>文件池名称
+        /// <summary>
+        /// File pool name
         /// </summary>
-        public string FilePoolName { get; set; }
+        public string FilePool { get; set; }
 
-        /// <summary>文件池路径
+        /// <summary>
+        /// File pool path
         /// </summary>
         public string FilePoolPath { get; set; }
 
-        /// <summary>序列索引号
+        /// <summary>
+        /// Train index
         /// </summary>
         public int Index { get; set; }
 
-        /// <summary>序列名
+        /// <summary>
+        /// Train name
         /// </summary>
         public string Name { get; set; }
 
-        /// <summary>序列路径
+        /// <summary>
+        /// Train path
         /// </summary>
         public string Path { get; set; }
 
-        /// <summary>序列类型
+        /// <summary>
+        /// Train type
         /// </summary>
         public TrainType TrainType { get; set; }
-
     }
 }

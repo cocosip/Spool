@@ -4,13 +4,15 @@ using System.Linq;
 
 namespace Spool.Utility
 {
-    /// <summary>Path Util
+    /// <summary>
+    /// File path util
     /// </summary>
     public static class FilePathUtil
     {
-        /// <summary>获取某个路径,或者文件中的文件扩展名
+        /// <summary>
+        /// Get file path extension
         /// </summary>
-        /// <param name="path">路径或者文件地址</param>
+        /// <param name="path"></param>
         /// <returns></returns>
         public static string GetPathExtension(string path)
         {
@@ -18,12 +20,14 @@ namespace Spool.Utility
             {
                 return path.Substring(path.LastIndexOf('.'));
             }
-            return "";
+            return string.Empty;
         }
 
-
-        /// <summary>Create the directory if not exist
+        /// <summary>
+        /// Create directory if not exist
         /// </summary>
+        /// <param name="directory"></param>
+        /// <returns>Create success or not</returns>
         public static bool CreateIfNotExists(string directory)
         {
             if (!Directory.Exists(directory))
@@ -34,8 +38,12 @@ namespace Spool.Utility
             return false;
         }
 
-        /// <summary>如果文件夹存在就删除
+        /// <summary>
+        /// Delete directory if exist
         /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="recursive"></param>
+        /// <returns>Delete success or not</returns>
         public static bool DeleteDirIfExist(string directory, bool recursive = false)
         {
             if (Directory.Exists(directory))
@@ -46,20 +54,26 @@ namespace Spool.Utility
             return false;
         }
 
-        /// <summary>If file exist,delete the file.
+        /// <summary>
+        /// Delete file if exist
         /// </summary>
-        public static bool DeleteFileIfExists(string filePath)
+        /// <param name="file"></param>
+        /// <returns>Delete success or not</returns>
+        public static bool DeleteFileIfExists(string file)
         {
-            if (File.Exists(filePath))
+            if (File.Exists(file))
             {
-                File.Delete(filePath);
+                File.Delete(file);
                 return true;
             }
             return false;
         }
 
-        /// <summary>递归获取某个目录下的全部文件
+        /// <summary>
+        /// Recursive get files
         /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static List<FileInfo> RecursiveGetFileInfos(string path)
         {
             var directoryInfo = new DirectoryInfo(path);

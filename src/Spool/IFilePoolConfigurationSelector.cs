@@ -1,15 +1,15 @@
 ﻿namespace Spool
 {
     /// <summary>
-    /// File pool factory
+    /// File pool configuration selector
     /// </summary>
-    public interface IFilePoolFactory
+    public interface IFilePoolConfigurationSelector
     {
         /// <summary>
-        /// Get or create file pool by name
+        /// Get file pool configuration by name
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        IFilePool GetOrCreate(string name);
+        FilePoolConfiguration Get(string name);
     }
 }

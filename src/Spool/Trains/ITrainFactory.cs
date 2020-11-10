@@ -1,34 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Spool.Trains
+﻿namespace Spool.Trains
 {
-    /// <summary>序列管理器
+    /// <summary>
+    /// Train factory
     /// </summary>
     public interface ITrainFactory
     {
-        /// <summary>初始化
+        /// <summary>
+        /// Create a new train
         /// </summary>
-        void Initialize();
+        /// <param name="configuration"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        ITrain Create(FilePoolConfiguration configuration, int index);
 
-        /// <summary>根据序列信息,文件池配置信息获取序列基本信息
-        /// </summary>
-        TrainInfo BuildInfo(ITrain train);
-
-        /// <summary>获取可以写的序列
-        /// </summary>
-        ITrain GetWriteTrain();
-
-        /// <summary>获取可读的序列
-        /// </summary>
-        ITrain GetReadTrain();
-
-        /// <summary>根据索引号获取序列
-        /// </summary>
-        ITrain GetTrainByIndex(int index);
-
-        /// <summary>获取全部的序列
-        /// </summary>
-        List<ITrain> GetTrains(Func<ITrain, bool> predicate);
     }
 }

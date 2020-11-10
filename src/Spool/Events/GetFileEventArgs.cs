@@ -1,22 +1,34 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace Spool
+namespace Spool.Events
 {
-    /// <summary>文件被取走事件
+    /// <summary>
+    /// Get file event args
     /// </summary>
     public class GetFileEventArgs : EventArgs
     {
-        /// <summary>文件池名称
+        /// <summary>
+        /// File pool name
         /// </summary>
-        public string FilePoolName { get; set; }
+        public string FilePool { get; set; }
 
-        /// <summary>被取走的文件
+        /// <summary>
+        /// SpoolFiles
         /// </summary>
-        public SpoolFile[] SpoolFiles { get; set; }
+        public List<SpoolFile> Files { get; set; }
 
-        /// <summary>获取文件数量
+        /// <summary>
+        /// Try to get files count
         /// </summary>
         public int GetFileCount { get; set; }
 
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        public GetFileEventArgs()
+        {
+            Files = new List<SpoolFile>();
+        }
     }
 }

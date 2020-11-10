@@ -1,24 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Spool
 {
-    /// <summary>Spool文件时序
+    /// <summary>
+    /// SpoolFile future
     /// </summary>
     public class SpoolFileFuture
     {
-        /// <summary>文件
+        /// <summary>
+        /// SpoolFile
         /// </summary>
         public SpoolFile File { get; set; }
 
-        /// <summary>开始时间(被拿走的时间)
+        /// <summary>
+        /// Begin time
         /// </summary>
         public DateTime BeginTime { get; set; }
 
-        /// <summary>过期需要的秒数
+        /// <summary>
+        /// Timeout seconds
         /// </summary>
         public long TimeoutSeconds { get; private set; }
 
-        /// <summary>ctor
+        /// <summary>Ctor
         /// </summary>
         public SpoolFileFuture()
         {
@@ -42,9 +48,5 @@ namespace Spool
         {
             return (DateTime.Now - BeginTime).TotalSeconds > TimeoutSeconds;
         }
-
-
-
-
     }
 }

@@ -1,170 +1,179 @@
 ﻿using Microsoft.Extensions.Logging;
-using Spool.Extensions;
+using Spool.Events;
 using Spool.Utility;
-using Spool.Writers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using SystemPath = System.IO.Path;
 
 namespace Spool.Trains
 {
-    /// <summary>序列
+    /// <summary>
+    /// Train
     /// </summary>
     public class Train : ITrain
     {
-
-        /// <summary>序列删除事件
+        /// <summary>
+        /// Delete train event
         /// </summary>
         public event EventHandler<TrainDeleteEventArgs> OnDelete;
 
-        /// <summary>序列类型转换事件
+        /// <summary>
+        /// Train type change event
         /// </summary>
         public event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
 
-        /// <summary>序列写满
+        /// <summary>
+        /// Train write over event
         /// </summary>
         public event EventHandler<TrainWriteOverEventArgs> OnWriteOver;
 
-        /// <summary>序列的索引
+        /// <summary>
+        /// File pool name
         /// </summary>
-        public int Index { get; private set; }
+        public string FilePool => _configuration?.Name;
 
-        /// <summary>序列名称
+        /// <summary>
+        /// Train name
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
-        /// <summary>序列的路径
+        /// <summary>
+        /// Train path
         /// </summary>
-        public string Path { get; private set; }
+        public string Path { get; }
 
-        /// <summary>序列类型
+        /// <summary>
+        /// Train index
         /// </summary>
-        public TrainType TrainType { get; set; }
+        public int Index { get; }
 
-        /// <summary>当前序列下待处理的数量
+        /// <summary>
+        /// TrainType
+        /// </summary>
+        public TrainType TrainType { get; private set; }
+
+        /// <summary>
+        /// Pending handle files
         /// </summary>
         public int PendingCount { get { return _pendingQueue.Count; } }
 
-        /// <summary>当前序列下被取走的数量
+        /// <summary>
+        /// Take away to handle files
         /// </summary>
         public int ProgressingCount { get { return _progressingDict.Count; } }
 
-        /// <summary>是否已经初始化
-        /// </summary>
+        private readonly ILogger _logger;
+        private readonly FilePoolConfiguration _configuration;
+
         private bool _initialized = false;
-
-        /// <summary>当前序列下文件的全部索引
-        /// </summary>
         private readonly ConcurrentQueue<SpoolFile> _pendingQueue;
-
-        /// <summary>进行中的序列下的文件操作
-        /// </summary>
         private readonly ConcurrentDictionary<string, SpoolFile> _progressingDict;
 
-
-        private readonly ILogger _logger;
-        private readonly FilePoolOption _option;
-        private readonly IdGenerator _idGenerator;
-        private readonly IFileWriterPool _fileWriterPool;
-
-        /// <summary>Ctor
+        /// <summary>
+        /// Ctor
         /// </summary>
-        public Train(ILogger<Train> logger, FilePoolOption option, IdGenerator idGenerator, IFileWriterPool fileWriterPool, TrainOption trainOption)
+        /// <param name="logger"></param>
+        /// <param name="configuration"></param>
+        /// <param name="index"></param>
+        public Train(ILogger<Train> logger, FilePoolConfiguration configuration, int index)
         {
             _logger = logger;
-            _option = option;
-            _idGenerator = idGenerator;
-            _fileWriterPool = fileWriterPool;
+            _configuration = configuration;
 
-            Index = trainOption.Index;
-            Name = TrainUtil.GenerateTrainName(Index);
-            Path = TrainUtil.GenerateTrainPath(_option.Path, Name);
+            Name = TrainUtil.GenerateTrainName(index);
+            Path = TrainUtil.GenerateTrainPath(configuration.Path, Name);
+            Index = index;
             TrainType = TrainType.Default;
+
             _pendingQueue = new ConcurrentQueue<SpoolFile>();
             _progressingDict = new ConcurrentDictionary<string, SpoolFile>();
         }
 
 
-        /// <summary>初始化
+
+        /// <summary>
+        /// Initialize
         /// </summary>
         public void Initialize()
         {
             if (_initialized)
             {
-                _logger.LogDebug("序列已经初始化,文件池名:'{0}',当前序列索引:'{1}'.", _option.Name, Index);
+                _logger.LogDebug("The train '{0}' in  file pool '{1}' has been initialized .", _configuration.Name, Name);
                 return;
             }
 
-            //创建序列文件夹
+            //Create train directory
             if (FilePathUtil.CreateIfNotExists(Path))
             {
-                _logger.LogDebug("创建序列文件夹,文件池名:'{0}',文件池路径:'{1}',当前序列索引:'{2}',序列路径:'{3}'.", _option.Name, _option.Path, Index, Path);
+                _logger.LogDebug("Create train directory, [FilePool:'{0}',FilePool Path:'{1}',Train :'{2}'].", _configuration.Name, _configuration.Path, Index);
+            }
+            else
+            {
+                _logger.LogDebug("Create train '{0}' directory failed in  file pool '{1}'!");
             }
             _initialized = true;
         }
 
-        /// <summary>序列信息
+        /// <summary>
+        /// Train info
         /// </summary>
         public string Info()
         {
-            return $"[文件池名:{_option.Name},文件池路径:{_option.Path},序列索引:{Index},序列名:{Name},序列路径:{Path}]";
+            return $"[FilePool:{_configuration.Name},FilePool path:{_configuration.Path},Index:{Index},Train name:{Name},Train path:{Path}]";
         }
 
-
-        /// <summary>能否释放
+        /// <summary>
+        /// Whether pending queue is empty
         /// </summary>
-        public bool IsEmpty()
+        /// <returns></returns>
+        public bool IsPendingEmpty()
         {
             return _pendingQueue.IsEmpty;
         }
 
-        /// <summary>写文件
+        /// <summary>
+        /// Write file
         /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        public Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
-            return await Task.Run(() =>
+            return Task.Run<SpoolFile>(() =>
             {
                 return WriteFile(stream, fileExt);
             });
         }
 
-        /// <summary>写文件
+        /// <summary>
+        /// Write file
         /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
         /// <returns></returns>
         public SpoolFile WriteFile(Stream stream, string fileExt)
         {
-            var spoolFile = new SpoolFile()
-            {
-                FilePoolName = _option.Name,
-                TrainIndex = Index
-            };
-            var fileWriter = _fileWriterPool.Get();
+            var spoolFile = new SpoolFile(_configuration.Name, Index);
             try
             {
 
                 var path = GenerateFilePath(fileExt);
-                fileWriter.WriteFile(stream, path);
                 spoolFile.Path = path;
+                //Write file
+                WriteInternal(stream, path);
 
-                //写入队列
+                //Write queue
                 _pendingQueue.Enqueue(spoolFile);
 
                 //是否写满了(需要按照待处理的文件数量+处理中的数量进行计算,避免当关闭自动归还功能时,磁盘下的文件还有大量的堆积)
-                if (_pendingQueue.Count + _progressingDict.Count > _option.TrainMaxFileCount)
+                if (_pendingQueue.Count + _progressingDict.Count > _configuration.TrainMaxFileCount)
                 {
                     var info = BuildInfo();
                     var args = new TrainWriteOverEventArgs()
                     {
-                        Info = info,
+                        Train = info,
                     };
                     OnWriteOver.Invoke(this, args);
                 }
@@ -173,24 +182,24 @@ namespace Spool.Trains
             }
             catch (Exception ex)
             {
-                _logger.LogError("写入文件出错,当前文件扩展名:'{0}',异常信息:{1}.", fileExt, ex.Message);
+                _logger.LogError("Write file to train failed, FilePool:'{0}',Train:'{1}',FileExt:'{2}',Exception:{3}.", _configuration.Name, Index, fileExt, ex.Message);
                 throw ex;
             }
             finally
             {
-                _fileWriterPool.Return(fileWriter);
                 //流释放
                 stream?.Close();
                 stream?.Dispose();
             }
+
         }
 
-
-        /// <summary>获取指定数量的文件
+        /// <summary>
+        /// Gets the specified number of files
         /// </summary>
-        /// <param name="count">数量</param>
+        /// <param name="count"></param>
         /// <returns></returns>
-        public SpoolFile[] GetFiles(int count = 1)
+        public List<SpoolFile> GetFiles(int count = 1)
         {
             var spoolFiles = new List<SpoolFile>();
             try
@@ -211,16 +220,16 @@ namespace Spool.Trains
             }
             catch (Exception ex)
             {
-                _logger.LogError("从序列:'{0}' 中获取文件失败。异常信息:{1}", Index, ex.Message);
-                //如果出现异常,则判断集合是否为空
+                _logger.LogError("From train:'{0}' get file failed。Exception:{1}", Index, ex.Message);
                 throw;
             }
-            return spoolFiles.ToArray();
+            return spoolFiles;
         }
 
-        /// <summary>归还数据
+        /// <summary>
+        /// Return files
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
+        /// <param name="spoolFiles"></param>
         public void ReturnFiles(params SpoolFile[] spoolFiles)
         {
             foreach (var spoolFile in spoolFiles)
@@ -228,20 +237,20 @@ namespace Spool.Trains
                 var code = spoolFile.GenerateCode();
                 if (_progressingDict.TryGetValue(code, out SpoolFile processFile))
                 {
-                    //文件存在,则移除,放回到原先的队列中
                     _pendingQueue.Enqueue(processFile);
                     _progressingDict.TryRemove(code, out _);
                 }
                 else
                 {
-                    _logger.LogDebug("归还数据文件不存在,该文件可能已经被释放。组:'{0}',序列索引:'{1}',文件路径:'{2}'.", spoolFile.FilePoolName, spoolFile.TrainIndex, spoolFile.Path);
+                    _logger.LogDebug("Return file not exist, the file may be released。FilePool :'{0}',Train:'{1}',Path:'{2}'.", spoolFile.FilePool, spoolFile.TrainIndex, spoolFile.Path);
                 }
             }
         }
 
-        /// <summary>释放文件
+        /// <summary>
+        /// Release files
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
+        /// <param name="spoolFiles"></param>
         public void ReleaseFiles(params SpoolFile[] spoolFiles)
         {
             try
@@ -254,44 +263,39 @@ namespace Spool.Trains
                     }
                     else
                     {
-                        _logger.LogDebug("释放文件时,未在处理中的队列发现文件,文件信息:{0}", deleteFile);
+                        _logger.LogDebug("Can't find release file in queue,file info:{0}", deleteFile);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError("释放文件出错:{0}", ex.Message);
+                _logger.LogError("Release file failed:{0}", ex.Message);
+                throw ex;
             }
             finally
             {
-                RealDelete();
+                DeleteFromLocal();
             }
         }
 
-
-
-        /// <summary>能否删除
+        /// <summary>
+        /// Change the train type
         /// </summary>
-        private bool CanDelete()
-        {
-            return IsEmpty() && _progressingDict.Count == 0 && TrainType == TrainType.Read;
-        }
-
-        /// <summary>序列类型转换
-        /// </summary>
+        /// <param name="type"></param>
         public void ChangeType(TrainType type)
         {
             var sourceType = this.TrainType;
             this.TrainType = type;
 
-            //需要做一些事情
+            //do some things
             if (OnTypeChange != null)
             {
                 var info = BuildInfo();
                 var args = new TrainTypeChangeEventArgs()
                 {
                     SourceType = sourceType,
-                    Info = info,
+                    DestinationType = type,
+                    Train = info,
                 };
                 OnTypeChange.Invoke(this, args);
             }
@@ -302,25 +306,54 @@ namespace Spool.Trains
                 LoadFiles();
             }
         }
-        #region Private Methods
 
-        /// <summary>真实的删除
+        #region Private methods
+
+        /// <summary>
+        /// Whether the file can delete
         /// </summary>
-        private void RealDelete()
+        private bool CanDeleteFromLocal()
         {
-            if (CanDelete())
+            return IsPendingEmpty() && _progressingDict.Count == 0 && TrainType == TrainType.Read;
+        }
+
+        /// <summary>
+        /// Delete file from local path
+        /// </summary>
+        private void DeleteFromLocal()
+        {
+            if (CanDeleteFromLocal())
             {
                 //删除
                 var info = BuildInfo();
                 var args = new TrainDeleteEventArgs()
                 {
-                    Info = info
+                    Train = info
                 };
                 OnDelete?.Invoke(this, args);
             }
         }
 
-        /// <summary>家在当前序列的文件
+        /// <summary>
+        /// Build train info
+        /// </summary>
+        /// <returns></returns>
+        private TrainInfo BuildInfo()
+        {
+            var info = new TrainInfo()
+            {
+                FilePool = _configuration.Name,
+                FilePoolPath = _configuration.Path,
+                Index = Index,
+                Name = Name,
+                Path = Path,
+                TrainType = TrainType
+            };
+            return info;
+        }
+
+        /// <summary>
+        /// Load train files
         /// </summary>
         private void LoadFiles()
         {
@@ -330,7 +363,7 @@ namespace Spool.Trains
             {
                 var spoolFile = new SpoolFile()
                 {
-                    FilePoolName = _option.Name,
+                    FilePool = _configuration.Name,
                     TrainIndex = Index,
                     Path = file.FullName
                 };
@@ -338,36 +371,32 @@ namespace Spool.Trains
             }
         }
 
-        /// <summary>根据序列信息,文件池配置信息获取序列基本信息
-        /// </summary>
-        private TrainInfo BuildInfo()
-        {
-            var info = new TrainInfo()
-            {
-                FilePoolName = _option.Name,
-                FilePoolPath = _option.Path,
-                Index = Index,
-                Name = Name,
-                Path = Path,
-                TrainType = TrainType
-            };
-            return info;
-        }
-
-
-        /// <summary>根据文件扩展名生成存储路径
+        /// <summary>
+        /// Generate file path
         /// </summary>
         private string GenerateFilePath(string fileExt)
         {
-            //组/索引/
-            var fileName = $"{_idGenerator.GenerateIdAsString()}{fileExt}";
-            var path = SystemPath.Combine(_option.Path, $"{Name}", fileName);
+            // D:\\pool1\\_000001_
+            var fileName = $"{ObjectId.GenerateNewStringId()}{fileExt}";
+            var path = System.IO.Path.Combine(_configuration.Path, $"{Name}", fileName);
             return path;
         }
 
+        private void WriteInternal(Stream stream, string path)
+        {
+            using (FileStream fs = File.OpenWrite(path))
+            {
+                var buffers = new byte[_configuration.WriteBufferSize];
+                int r = stream.Read(buffers, 0, buffers.Length);
+                while (r > 0)
+                {
+                    fs.Write(buffers, 0, r);
+                    r = stream.Read(buffers, 0, buffers.Length);
+                }
+            }
+        } 
         #endregion
 
 
     }
-
 }

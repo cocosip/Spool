@@ -1,18 +1,21 @@
 ﻿using System;
 
-namespace Spool
+namespace Spool.Events
 {
-    /// <summary>写文件事件
+    /// <summary>
+    /// Write file event args
     /// </summary>
     public class WriteFileEventArgs : EventArgs
     {
-        /// <summary>文件池名称
+        /// <summary>
+        /// File pool name
         /// </summary>
-        public string FilePoolName { get; set; }
+        public string FilePool { get; set; }
 
-        /// <summary>写入的文件
+        /// <summary>
+        /// SpoolFile
         /// </summary>
-        public SpoolFile SpoolFile { get; set; }
+        public SpoolFile File { get; set; }
 
     }
 }

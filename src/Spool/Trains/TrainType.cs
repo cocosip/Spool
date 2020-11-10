@@ -1,22 +1,27 @@
 ﻿namespace Spool.Trains
 {
-    /// <summary>序列类型
+    /// <summary>
+    /// Train type
     /// </summary>
     public enum TrainType
     {
-        /// <summary>默认(未分配)
+        /// <summary>
+        /// Default(unused)
         /// </summary>
         Default = 1,
 
-        /// <summary>只读
+        /// <summary>
+        /// Read only
         /// </summary>
         Read = 2,
 
-        /// <summary>能读能写
+        /// <summary>
+        /// Read and write
         /// </summary>
         ReadWrite = 4,
 
-        /// <summary>只写
+        /// <summary>
+        /// Write
         /// </summary>
         Write = 8
     }

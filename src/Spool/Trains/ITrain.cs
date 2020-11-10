@@ -1,93 +1,122 @@
-﻿using System;
+﻿using Spool.Events;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace Spool.Trains
 {
-    /// <summary>序列
+    /// <summary>
+    /// Train
     /// </summary>
     public interface ITrain
     {
-        /// <summary>序列删除事件
+
+        /// <summary>
+        /// Delete train event
         /// </summary>
         event EventHandler<TrainDeleteEventArgs> OnDelete;
 
-        /// <summary>序列类型转换事件
+        /// <summary>
+        /// Train type change event
         /// </summary>
         event EventHandler<TrainTypeChangeEventArgs> OnTypeChange;
 
-        /// <summary>序列写满
+        /// <summary>
+        /// Train write over event
         /// </summary>
         event EventHandler<TrainWriteOverEventArgs> OnWriteOver;
 
-        /// <summary>序列的索引
+        /// <summary>
+        /// File pool name
         /// </summary>
-        int Index { get; }
+        string FilePool { get; }
 
-        /// <summary>序列名称
+        /// <summary>
+        /// Train name
         /// </summary>
         string Name { get; }
 
-        /// <summary>序列的路径
+        /// <summary>
+        /// Train path
         /// </summary>
         string Path { get; }
 
-        /// <summary>序列类型
+        /// <summary>
+        /// Train index
+        /// </summary>
+        int Index { get; }
+
+        /// <summary>
+        /// Train type
         /// </summary>
         TrainType TrainType { get; }
 
-        /// <summary>当前序列下待处理的数量
+        /// <summary>
+        /// Pending handle files
         /// </summary>
         int PendingCount { get; }
 
-        /// <summary>当前序列下被取走的数量
+        /// <summary>
+        /// Take away to handle files
         /// </summary>
         int ProgressingCount { get; }
 
-        /// <summary>初始化
+        /// <summary>
+        /// Initialize
         /// </summary>
         void Initialize();
 
-        /// <summary>序列信息
+        /// <summary>
+        /// Train info
         /// </summary>
         string Info();
 
-        /// <summary>能否释放
+        /// <summary>
+        /// Whether pending queue is empty
         /// </summary>
-        bool IsEmpty();
+        /// <returns></returns>
+        bool IsPendingEmpty();
 
-        /// <summary>写文件
+        /// <summary>
+        /// Write file
         /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
         /// <returns></returns>
         Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
 
-        /// <summary>写文件
+        /// <summary>
+        /// Write file
         /// </summary>
-        /// <param name="stream">文件流</param>
-        /// <param name="fileExt">文件扩展名</param>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
         /// <returns></returns>
         SpoolFile WriteFile(Stream stream, string fileExt);
 
-        /// <summary>获取指定数量的文件
+        /// <summary>
+        /// Gets the specified number of files
         /// </summary>
-        /// <param name="count">数量</param>
+        /// <param name="count"></param>
         /// <returns></returns>
-        SpoolFile[] GetFiles(int count = 1);
+        List<SpoolFile> GetFiles(int count = 1);
 
-        /// <summary>归还数据
+        /// <summary>
+        /// Return files
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
+        /// <param name="spoolFiles"></param>
         void ReturnFiles(params SpoolFile[] spoolFiles);
 
-        /// <summary>释放文件
+        /// <summary>
+        /// Release files
         /// </summary>
-        /// <param name="spoolFiles">文件列表</param>
+        /// <param name="spoolFiles"></param>
         void ReleaseFiles(params SpoolFile[] spoolFiles);
 
-        /// <summary>序列类型转换
+        /// <summary>
+        /// Change the train type
         /// </summary>
+        /// <param name="type"></param>
         void ChangeType(TrainType type);
     }
 }

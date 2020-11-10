@@ -3,45 +3,46 @@ using System.Text.RegularExpressions;
 
 namespace Spool.Utility
 {
-    /// <summary>序列名称
+    /// <summary>
+    /// Train util
     /// </summary>
     public static class TrainUtil
     {
         /// <summary>
-        /// 根据索引号生成序列名称
+        /// Generate train name by train index
         /// </summary>
-        /// <param name="index">索引号</param>
+        /// <param name="index">train index</param>
         /// <returns></returns>
         public static string GenerateTrainName(int index)
         {
             return $"_{index.ToString().PadLeft(6, '0')}_";
         }
 
-        /// <summary>根据文件池路径,序列名生成序列路径
+        /// <summary>Generate train path by file pool path and train name
         /// </summary>
-        /// <param name="path">文件池路径</param>
-        /// <param name="trainName">序列名</param>
+        /// <param name="path">File pool path</param>
+        /// <param name="trainName">train name</param>
         /// <returns></returns>
-        public static string GenerateTrainPath(string path,string trainName)
+        public static string GenerateTrainPath(string path, string trainName)
         {
             return Path.Combine(path, trainName);
         }
 
-
         /// <summary>
-        /// 判断是否为有效的序列名称
+        /// Whether it is a train name
         /// </summary>
-        /// <param name="name">序列名</param>
+        /// <param name="name">train name</param>
         /// <returns></returns>
         public static bool IsTrainName(string name)
         {
             return Regex.IsMatch(name, @"^_[\d]{6}_$");
         }
 
+
         /// <summary>
-        /// 根据序列名称获取序列索引
+        /// Get train index by train name
         /// </summary>
-        /// <param name="name">序列名称</param>
+        /// <param name="name">train name</param>
         /// <returns></returns>
         public static int GetTrainIndex(string name)
         {
