@@ -10,7 +10,7 @@ namespace Spool
         private readonly SpoolOptions _options;
 
         /// <summary>
-        /// ctor
+        /// Ctor
         /// </summary>
         /// <param name="options"></param>
         public DefaultFilePoolConfigurationSelector(IOptions<SpoolOptions> options)

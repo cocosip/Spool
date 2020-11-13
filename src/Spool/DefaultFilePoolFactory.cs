@@ -4,6 +4,8 @@ using Spool.Trains;
 using Spool.Utility;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Spool
 {
@@ -59,6 +61,15 @@ namespace Spool
             }
 
             return filePool;
+        }
+
+        /// <summary>
+        /// Get all file pools
+        /// </summary>
+        /// <returns></returns>
+        public List<IFilePool> GetAllFilePools()
+        {
+            return _filePools.Values.ToList();
         }
 
 
