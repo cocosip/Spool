@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)|$(TargetFramework)'=='Debug|AnyCPU|netstandard2.0'">
-    <DocumentationFile>bin\Debug\netstandard2.0\Spool.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.1\Spool.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)|$(TargetFramework)'=='Release|AnyCPU|netstandard2.0'">
-    <DocumentationFile>bin\Release\netstandard2.0\Spool.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.1\Spool.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
