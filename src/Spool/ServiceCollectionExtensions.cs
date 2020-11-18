@@ -27,9 +27,7 @@ namespace Spool
                 .AddSingleton<IFilePoolFactory, DefaultFilePoolFactory>()
                 .AddTransient(typeof(IFilePool<>), typeof(FilePool<>))
                 .AddTransient<ITrainFactory, DefaultTrainFactory>()
-                .AddTransient<IFilePoolConfigurationSelector, DefaultFilePoolConfigurationSelector>()
-                ;
-
+                .AddTransient<IFilePoolConfigurationSelector, DefaultFilePoolConfigurationSelector>();
 
             return services;
         }

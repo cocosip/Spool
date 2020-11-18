@@ -11,7 +11,7 @@ namespace Spool.Utility
     public class ScheduleService : IScheduleService
     {
         private readonly ILogger _logger;
-        private readonly object SyncObject = new object();
+        private readonly object sync = new object();
         private readonly Dictionary<string, TimerBasedTask> _taskDict = new Dictionary<string, TimerBasedTask>();
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Spool.Utility
         /// <param name="period">执行时间间隔</param>
         public void StartTask(string name, Action action, int dueTime, int period)
         {
-            lock (SyncObject)
+            lock (sync)
             {
                 if (_taskDict.ContainsKey(name))
                 {
@@ -59,10 +59,9 @@ namespace Spool.Utility
         /// <param name="name">Task name</param>
         public void StopTask(string name)
         {
-            lock (SyncObject)
+            lock (sync)
             {
-                TimerBasedTask task;
-                if (_taskDict.TryGetValue(name, out task))
+                if (_taskDict.TryGetValue(name, out TimerBasedTask task))
                 {
                     task.Stopped = true;
                     task.Timer.Dispose();
@@ -74,8 +73,7 @@ namespace Spool.Utility
         private void TaskCallback(object obj)
         {
             var taskName = (string)obj;
-            TimerBasedTask task;
-            if (_taskDict.TryGetValue(taskName, out task))
+            if (_taskDict.TryGetValue(taskName, out TimerBasedTask task))
             {
                 try
                 {
