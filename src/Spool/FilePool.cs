@@ -461,11 +461,26 @@ namespace Spool
             try
             {
                 _sync.Reset();
+
                 //Remove train from dict
                 if (_trainDict.TryRemove(e.Train.Index, out ITrain train))
                 {
-                    //Delete train files
-                    FilePathUtil.DeleteDirIfExist(e.Train.Path);
+                    try
+                    {
+                        var files = Directory.GetFiles(e.Train.Path);
+                        if (files.Count() > 0)
+                        {
+                            throw new Exception($"Delete train , there are still {files.Count()} files in train,could not delete!");
+                        }
+
+
+                        //Delete train files
+                        FilePathUtil.DeleteDirIfExist(e.Train.Path, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Delete train from local path failed,ex:{0}", ex.Message);
+                    }
                 }
                 else
                 {
@@ -624,18 +639,11 @@ namespace Spool
         private ITrain GetTrainByIndex(int index)
         {
             _sync.Wait();
-            try
+            if (!_trainDict.TryGetValue(index, out ITrain train))
             {
-                if (!_trainDict.TryGetValue(index, out ITrain train))
-                {
-                    _logger.LogWarning("Get train '{0}' faile,this train was not exist or was released.", index);
-                }
-                return train;
+                _logger.LogWarning("Get train '{0}' faile,this train was not exist or was released.", index);
             }
-            finally
-            {
-                _sync.Set();
-            }
+            return train;
         }
 
         #endregion
@@ -736,6 +744,7 @@ namespace Spool
         {
             _scheduleService.StopTask(_autoReturnFilesTaskName);
             _scheduleService.StopTask(_fileWatcherTaskName);
+            _sync?.Dispose();
         }
     }
 }

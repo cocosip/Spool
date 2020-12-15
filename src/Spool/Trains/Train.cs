@@ -284,8 +284,8 @@ namespace Spool.Trains
         /// <param name="type"></param>
         public void ChangeType(TrainType type)
         {
-            var sourceType = this.TrainType;
-            this.TrainType = type;
+            var sourceType = TrainType;
+            TrainType = type;
 
             //do some things
             if (OnTypeChange != null)
