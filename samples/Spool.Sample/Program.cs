@@ -59,7 +59,6 @@ namespace Spool.Sample
                     {
                         var filePool = _filePoolFactory.GetOrCreate<DefaultFilePool>();
                         await filePool.WriteFileAsync(new MemoryStream(data), ".txt");
-
                     }
                     catch (Exception ex)
                     {

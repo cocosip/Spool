@@ -30,61 +30,72 @@
 > 初始化代码
 
 ```c#
-var descriptor1 = new FilePoolDescriptor()
+//Configure spool
+services.Configure<SpoolOptions>(options =>
 {
-    Name = "pool1",
-    Path = "D:\\pool1",
-    MaxFileWriterCount = 10,
-    TrainMaxFileCount = 65535,
-    WriteBufferSize = 1024 * 1024 * 2,
-    EnableAutoReturn = true,
-    AutoReturnSeconds = 5,
-    ScanReturnFileMillSeconds = 1000,
-    EnableFileWatcher = true,
-    FileWatcherPath = "D:\\watcher1",
-    ScanFileWatcherMillSeconds = 5000,
-};
-
-IServiceCollection services = new ServiceCollection();
-services.AddLogging(l =>
-{
-    l.AddConsole().SetMinimumLevel(LogLevel.Debug);
-}).AddSpool(o =>
-{
-    o.DefaultPool = "pool1";
-    o.FilePools = new List<FilePoolDescriptor>()
+    options.FilePools.ConfigureDefault(c =>
     {
-        descriptor1
-    };
+        c.Name = DefaultFilePool.Name;
+        c.Path = "D:\\SpoolTest";
+        c.EnableFileWatcher = true;
+        c.FileWatcherPath = "D:\\SpoolWatcher";
+        c.EnableAutoReturn = true;
+        c.ScanReturnFileMillSeconds = 2000;
+        c.AutoReturnSeconds = 300;
+    });
 });
 
-Provider = services.BuildServiceProvider();
-Provider.UseSpool();
+//Add spool
+services.AddSpool();
+```
+
+> 获取一个文件池
+```c#
+var filePool = serviceProvider.GetService<IFilePool<DefaultPool>>();
+
+Or
+
+var filePoolFactory = serviceProvider.GetService<IFilePoolFactory>();
+var filePool = filePoolFactory.GetOrCreate("default");
+//var filePool = filePoolFactory.GetOrCreate<DefaultPool>();
 
 ```
 
 > 获取文件
 
 ```c#
-var spoolFiles = spoolPool.Get("pool1", 50);
+var spoolFiles = filePool.GetFiles(50);
 
 ```
 
 > 写入文件
 
 ```c#
-var spoolFile = await spoolPool.WriteAsync("pool1","D:\\file1.text");
+filePool.WriteFileAsync(new MemoryStream(data), ".txt");
+//filePool.WriteFileAsync("D:\\1.txt");
 
 ```
 
 > 释放文件(释放文件后文件将会被删除)
 
 ```c#
-spoolPool.Return("pool1", spoolFiles);
+filePool.ReturnFiles(spoolFiles);
 ```
 
 > 归还文件(当某一批文件处理失败后,需要放回文件池)
 
 ```c#
-spoolPool.Release("pool1", spoolFiles);
+filePool.ReleaseFiles(spoolFiles);
+```
+
+> 获待处理的文件数量
+
+```c#
+var count = filePool.GetPendingCount();
+```
+
+> 获取进行中的文件数量(GetFiles方法被取走的文件总数)
+
+```c#
+var count = filePool.GetProcessingCount();
 ```
