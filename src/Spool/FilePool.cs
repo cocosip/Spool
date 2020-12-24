@@ -702,12 +702,14 @@ namespace Spool
                         //Last write time 2s ago
                         if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
                         {
-                            var fileStream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read);
-                            var fileExt = FilePathUtil.GetPathExtension(file.Name);
-                            await WriteFileAsync(fileStream, fileExt);
+                            using var fs = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
+                            var ext = FilePathUtil.GetPathExtension(file.Name);
+                            await WriteFileAsync(fs, ext);
                             //Add to delete path
                             deleteFiles.Add(file.FullName);
                             _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
+
                         }
                     }
 
