@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+﻿using DotCommon.Utility;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using System.IO;
 using Microsoft.Extensions.Options;
-using System.Linq;
 using Spool.Utility;
-using DotCommon.Utility;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Spool.Tests
 {
@@ -34,13 +32,25 @@ namespace Spool.Tests
             Assert.Equal(DefaultFilePool.Name, spoolFile1.FilePool);
             Assert.Equal(1, spoolFile1.TrainIndex);
 
-
             var testPath = PathUtil.MapPath("../../../test-files");
             var file2 = Path.Combine(testPath, "t1.txt");
             var spoolFile2 = await filePool.WriteFileAsync(file2);
 
+            var pending1 = filePool.GetPendingCount();
+            Assert.Equal(2, pending1);
+            var processing1 = filePool.GetProcessingCount();
+            Assert.Equal(0, processing1);
+
+            //Write third
+            var spoolFile3 = filePool.WriteFile(file2);
+
             var spoolFiles = filePool.GetFiles(2);
             Assert.Equal(2, spoolFiles.Count);
+
+            var pending2 = filePool.GetPendingCount();
+            Assert.Equal(1, pending2);
+            var processing2 = filePool.GetProcessingCount();
+            Assert.Equal(2, processing2);
 
             var spoolFile_q1 = spoolFiles.FirstOrDefault(x => x.Path == spoolFile1.Path);
             Assert.NotNull(spoolFile_q1);

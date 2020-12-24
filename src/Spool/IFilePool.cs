@@ -42,6 +42,14 @@ namespace Spool
         Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
 
         /// <summary>
+        /// Write file
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        SpoolFile WriteFile(Stream stream, string fileExt);
+
+        /// <summary>
         /// Return files to file pool
         /// </summary>
         /// <param name="files"></param>

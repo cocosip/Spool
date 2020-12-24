@@ -58,6 +58,17 @@ namespace Spool
         }
 
         /// <summary>
+        /// Write file
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        public SpoolFile WriteFile(Stream stream, string fileExt)
+        {
+            return _filePool.WriteFile(stream, fileExt);
+        }
+
+        /// <summary>
         /// Return files to file pool
         /// </summary>
         /// <param name="files"></param>
@@ -245,6 +256,18 @@ namespace Spool
         {
             var train = GetWriteTrain();
             return await train.WriteFileAsync(stream, fileExt);
+        }
+
+        /// <summary>
+        /// Write file
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        public SpoolFile WriteFile(Stream stream, string fileExt)
+        {
+            var train = GetWriteTrain();
+            return train.WriteFile(stream, fileExt);
         }
 
         /// <summary>
