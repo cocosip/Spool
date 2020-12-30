@@ -1,8 +1,11 @@
-﻿namespace Spool
+﻿using System;
+
+namespace Spool
 {
     /// <summary>
     /// File pool configuration info
     /// </summary>
+    [Serializable]
     public class FilePoolConfiguration
     {
         /// <summary>
