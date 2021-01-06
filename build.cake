@@ -163,15 +163,32 @@ Task("Publish")
             throw new InvalidOperationException("Could not resolve NuGet API url.");
          }
 
+         var symbolsApiUrl = EnvironmentVariable("SYMBOLS_API_URL");
+         if (string.IsNullOrEmpty(symbolsApiUrl))
+         {
+            throw new InvalidOperationException("Could not resolve Symbols API url.");
+         }
+
          foreach (var package in parameters.Packages.Nuget)
          {
             // Push the package.
             NuGetPush(package.PackagePath, new NuGetPushSettings
             {
                ApiKey = apiKey,
-                  Source = apiUrl
+               Source = apiUrl
             });
             Information($"publish nuget:{package.PackagePath}");
+         }
+
+         foreach (var package in parameters.SymbolsPackages.Nuget)
+         {
+            // Push the package.
+            NuGetPush(package.PackagePath, new NuGetPushSettings
+            {
+               ApiKey = apiKey,
+               Source = symbolsApiUrl
+            });
+            Information($"symbol nuget:{package.PackagePath}");
          }
 
       }
