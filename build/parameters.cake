@@ -11,10 +11,9 @@ public class BuildParameters
     public bool IsLocalBuild { get; private set; }
     public bool IsRunningOnUnix { get; private set; }
     public bool IsRunningOnWindows { get; private set; }
-    public bool IsRunningOnTravisCI { get; private set; }
-    public bool IsRunningOnAppVeyor { get; private set; }
     public bool IsRunningOnAzurePipelines { get; private set; }
     public bool IsRunningOnAzurePipelinesHosted { get; private set;}
+    public bool IsRunningOnGitHubActions { get; private set; }
     public bool IsPullRequest { get; private set; }
     public bool IsMasterBranch { get; private set; }
     public bool IsDevelopBranch { get; private set; }
@@ -42,7 +41,7 @@ public class BuildParameters
     {
         get
         {
-            return !IsLocalBuild && !IsPullRequest && IsTagged && (IsRunningOnTravisCI || IsRunningOnAppVeyor || IsRunningOnAzurePipelines|| IsRunningOnAzurePipelinesHosted)&&IsRunningOnWindows;
+            return !IsLocalBuild && !IsPullRequest && IsTagged && (IsRunningOnAzurePipelines|| IsRunningOnAzurePipelinesHosted || IsRunningOnGitHubActions) && IsRunningOnWindows;
         }
     }
 
@@ -50,7 +49,7 @@ public class BuildParameters
     {
         get
         {
-            return !IsLocalBuild && !IsPullRequest && IsTagged && (IsRunningOnTravisCI || IsRunningOnAppVeyor || IsRunningOnAzurePipelines || IsRunningOnAzurePipelinesHosted)&&IsRunningOnWindows;
+            return !IsLocalBuild && !IsPullRequest && IsTagged && (IsRunningOnAzurePipelines || IsRunningOnAzurePipelinesHosted || IsRunningOnGitHubActions) && IsRunningOnWindows;
         }
     }
 
@@ -74,18 +73,7 @@ public class BuildParameters
         {
             suffix += "dev-" + Util.CreateStamp();
         }
-        // else
-        // {
-        //     //需要发布到Nuget
-        //     if (ShouldPublishToNuGet && !string.IsNullOrWhiteSpace(versionQuality))
-        //     {
-        //         suffix = string.IsNullOrWhiteSpace(suffix) ? "Pre" : suffix;
-        //     }
-		// 	else
-		// 	{
-		// 	    suffix = "";
-		// 	}
-        // }
+
         suffix = string.IsNullOrWhiteSpace(suffix) ? null : suffix;
 		
 		context.Information($"Suffix:{suffix}");
@@ -126,10 +114,11 @@ public class BuildParameters
             IsLocalBuild = buildSystem.IsLocalBuild,
             IsRunningOnUnix = context.IsRunningOnUnix(),
             IsRunningOnWindows = context.IsRunningOnWindows(),
-            IsRunningOnTravisCI = buildSystem.TravisCI.IsRunningOnTravisCI,
-            IsRunningOnAppVeyor =  buildSystem.AppVeyor.IsRunningOnAppVeyor,
+            //IsRunningOnTravisCI = buildSystem.TravisCI.IsRunningOnTravisCI,
+            //IsRunningOnAppVeyor =  buildSystem.AppVeyor.IsRunningOnAppVeyor,
             IsRunningOnAzurePipelines = buildSystem.AzurePipelines.IsRunningOnAzurePipelines,
-            IsRunningOnAzurePipelinesHosted= buildSystem.AzurePipelines.IsRunningOnAzurePipelinesHosted,
+            IsRunningOnAzurePipelinesHosted = buildSystem.AzurePipelines.IsRunningOnAzurePipelinesHosted,
+            IsRunningOnGitHubActions = buildSystem.GitHubActions.IsRunningOnGitHubActions,
             IsPullRequest = IsThePullRequest(buildSystem),
             IsMasterBranch = IsTheMasterBranch(buildSystem),
             IsDevelopBranch = IsTheDevelopBranch(buildSystem),
@@ -152,12 +141,11 @@ public class BuildParameters
         context.Information($"IsLocalBuild:{parameters.IsLocalBuild}");
         context.Information($"IsRunningOnUnix:{parameters.IsRunningOnUnix}");
         context.Information($"IsRunningOnWindows:{parameters.IsRunningOnWindows}");
-        context.Information($"IsRunningOnTravisCI:{parameters.IsRunningOnTravisCI}");
-        context.Information($"IsRunningOnAppVeyor:{parameters.IsRunningOnAppVeyor}");
         context.Information($"IsPullRequest:{parameters.IsPullRequest}");
         context.Information($"IsMasterBranch:{parameters.IsMasterBranch}");
         context.Information($"IsRunningOnAzurePipelines:{parameters.IsRunningOnAzurePipelines}");
         context.Information($"IsRunningOnAzurePipelinesHosted:{parameters.IsRunningOnAzurePipelinesHosted}");
+        context.Information($"IsRunningOnGitHubActions:{parameters.IsRunningOnGitHubActions}");
         context.Information($"IsTagged:{parameters.IsTagged}");
         context.Information($"ShouldPublish:{parameters.ShouldPublish}");
         context.Information($"ShouldPublishToNuGet:{parameters.ShouldPublishToNuGet}");
