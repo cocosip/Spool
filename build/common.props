@@ -8,8 +8,9 @@
     <PackageLicense>https://github.com/cocosip/Spool/blob/master/LICENSE</PackageLicense>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/cocosip/Spool</RepositoryUrl>
-	
-	<!-- https://github.com/dotnet/sourcelink -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- https://github.com/dotnet/sourcelink -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
