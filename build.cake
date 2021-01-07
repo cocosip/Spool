@@ -62,11 +62,11 @@ Task("Restore-NuGet-Packages")
       var settings = new DotNetCoreRestoreSettings
       {
          ArgumentCustomization = args =>
-            {
-               args.Append($"/p:VersionSuffix={parameters.Version.Suffix}");
-               return args;
-            },
-            Sources = new [] { "https://api.nuget.org/v3/index.json" }
+         {
+            args.Append($"/p:VersionSuffix={parameters.Version.Suffix}");
+            return args;
+         },
+         Sources = new [] { "https://api.nuget.org/v3/index.json" }
       };
       foreach (var project in parameters.ProjectFiles)
       {
@@ -128,11 +128,6 @@ Task("Pack")
          DotNetCorePack(project.FullPath, settings);
          Information($"pack:{project.FullPath}");
       }
-      // foreach (var package in parameters.Packages.Nuget)
-      // {
-      //    //DotNetCorePack(project.PackagePath, settings);
-      //    Information($"publishpath:{package.PackagePath}");
-      // }
    });
 
 //发布Nuget
