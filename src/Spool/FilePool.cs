@@ -521,6 +521,12 @@ namespace Spool
                     {
                         _logger.LogError(ex, "Delete train from local path failed,ex:{0}", ex.Message);
                     }
+
+                    //ReAdd
+                    if (_trainDict.TryAdd(e.Train.Index, train))
+                    {
+                        _logger.LogWarning("ReAdd not empty train '{0}'", e.Train.Index);
+                    }
                 }
                 else
                 {
