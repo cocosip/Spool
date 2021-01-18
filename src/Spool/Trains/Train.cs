@@ -77,7 +77,10 @@ namespace Spool.Trains
         /// <param name="logger"></param>
         /// <param name="configuration"></param>
         /// <param name="index"></param>
-        public Train(ILogger<Train> logger, FilePoolConfiguration configuration, int index)
+        public Train(
+            ILogger<Train> logger,
+            FilePoolConfiguration configuration,
+            int index)
         {
             _logger = logger;
             _configuration = configuration;
@@ -90,8 +93,6 @@ namespace Spool.Trains
             _pendingQueue = new ConcurrentQueue<SpoolFile>();
             _progressingDict = new ConcurrentDictionary<string, SpoolFile>();
         }
-
-
 
         /// <summary>
         /// Initialize
@@ -175,7 +176,7 @@ namespace Spool.Trains
                     {
                         Train = info,
                     };
-                    OnWriteOver.Invoke(this, args);
+                    OnWriteOver?.Invoke(this, args);
                 }
 
                 return spoolFile;
@@ -394,7 +395,7 @@ namespace Spool.Trains
                     r = stream.Read(buffers, 0, buffers.Length);
                 }
             }
-        } 
+        }
         #endregion
 
 

@@ -27,7 +27,10 @@ namespace Spool
         /// <param name="logger"></param>
         /// <param name="serviceProvider"></param>
         /// <param name="configurationSelector"></param>
-        public DefaultFilePoolFactory(ILogger<DefaultFilePoolFactory> logger, IServiceProvider serviceProvider, IFilePoolConfigurationSelector configurationSelector)
+        public DefaultFilePoolFactory(
+            ILogger<DefaultFilePoolFactory> logger,
+            IServiceProvider serviceProvider,
+            IFilePoolConfigurationSelector configurationSelector)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -51,7 +54,6 @@ namespace Spool
                         filePool = BuildFilePool(name);
                         filePool.Setup();
 
-                        //
                         if (!_filePools.TryAdd(name, filePool))
                         {
                             _logger.LogWarning("Could not add file pool '{0}' to dict.", name);

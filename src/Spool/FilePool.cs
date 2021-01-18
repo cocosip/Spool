@@ -138,7 +138,11 @@ namespace Spool
         /// <param name="configuration"></param>
         /// <param name="scheduleService"></param>
         /// <param name="trainFactory"></param>
-        public FilePool(ILogger<FilePool> logger, FilePoolConfiguration configuration, IScheduleService scheduleService, ITrainFactory trainFactory)
+        public FilePool(
+            ILogger<FilePool> logger,
+            FilePoolConfiguration configuration,
+            IScheduleService scheduleService,
+            ITrainFactory trainFactory)
         {
             _logger = logger;
             Configuration = configuration;
@@ -346,6 +350,7 @@ namespace Spool
         #region Private methods
 
         /// <summary>
+        /// 
         /// Initialize trains
         /// </summary>
         private void InitializeTrains()
@@ -483,7 +488,20 @@ namespace Spool
                 _sync.Reset();
 
                 //Remove train from dict
-                if (_trainDict.TryRemove(e.Train.Index, out ITrain train))
+                if (_trainDict.TryGetValue(e.Train.Index, out ITrain train))
+                {
+                    if (!train.IsPendingEmpty() || train.ProgressingCount > 0)
+                    {
+                        _logger.LogWarning("Try to delete train '{0}',but train still has files", e.Train.Index);
+                        return;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Try get train '{0}' failed .", e.Train.Index);
+                }
+
+                if (_trainDict.TryRemove(e.Train.Index, out train))
                 {
                     try
                     {
@@ -494,7 +512,10 @@ namespace Spool
                         }
 
                         //Delete train files
-                        FilePathUtil.DeleteDirIfExist(e.Train.Path, false);
+                        if (!FilePathUtil.DeleteDirIfExist(e.Train.Path, false))
+                        {
+                            _logger.LogWarning("Try delete train was not empty.");
+                        }
                     }
                     catch (Exception ex)
                     {
