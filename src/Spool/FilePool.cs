@@ -322,9 +322,6 @@ namespace Spool
             }
         }
 
-
-
-
         /// <summary>
         /// Get pending files count
         /// </summary>
@@ -495,7 +492,6 @@ namespace Spool
                         {
                             throw new Exception($"Delete train , there are still {files.Count()} files in train,could not delete!");
                         }
-
 
                         //Delete train files
                         FilePathUtil.DeleteDirIfExist(e.Train.Path, false);
