@@ -745,6 +745,12 @@ namespace Spool
                     var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
                     foreach (var file in files)
                     {
+                        if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
+                        {
+                            _logger.LogDebug("Skip file '{0}',because it is zero size.", file);
+                            continue;
+                        }
+
                         //Last write time 5s ago
                         if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
                         {

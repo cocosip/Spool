@@ -49,6 +49,11 @@ namespace Spool
         public int FileWatcherLastWrite { get; set; } = 30;
 
         /// <summary>
+        /// Skip file size is zero
+        /// </summary>
+        public bool FileWatcherSkipZeroFile { get; set; } = true;
+
+        /// <summary>
         /// Scan file watecher path interval(ms)
         /// </summary>
         public int ScanFileWatcherMillSeconds { get; set; } = 5000;
