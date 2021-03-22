@@ -745,8 +745,8 @@ namespace Spool
                     var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
                     foreach (var file in files)
                     {
-                        //Last write time 2s ago
-                        if (file.LastAccessTime < DateTime.Now.AddSeconds(-2))
+                        //Last write time 5s ago
+                        if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
                         {
                             using var fs = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
@@ -755,7 +755,6 @@ namespace Spool
                             //Add to delete path
                             deleteFiles.Add(file.FullName);
                             _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
-
                         }
                     }
 
@@ -767,20 +766,21 @@ namespace Spool
                 }
                 finally
                 {
-                    try
+                    if (deleteFiles.Any())
                     {
-                        if (deleteFiles.Any())
+                        foreach (var deleteFile in deleteFiles)
                         {
-                            foreach (var deleteFile in deleteFiles)
+                            try
                             {
                                 FilePathUtil.DeleteFileIfExists(deleteFile);
                             }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Delete watcher file '{0}' exception:{1}.", deleteFile, ex.Message);
+                            }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Delete watcher file exception:{0}.", ex.Message);
-                    }
+
                 }
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }

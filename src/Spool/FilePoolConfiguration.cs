@@ -44,6 +44,11 @@ namespace Spool
         public int FileWatcherCopyThread { get; set; } = 1;
 
         /// <summary>
+        /// File watcher file last write seconds.
+        /// </summary>
+        public int FileWatcherLastWrite { get; set; } = 30;
+
+        /// <summary>
         /// Scan file watecher path interval(ms)
         /// </summary>
         public int ScanFileWatcherMillSeconds { get; set; } = 5000;

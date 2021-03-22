@@ -24,6 +24,7 @@ namespace Spool.Tests
                     c.EnableFileWatcher = true;
                     c.FileWatcherPath = Path.Combine(AppContext.BaseDirectory, "test-spool1-watcher");
                     c.FileWatcherCopyThread = 2;
+                    c.FileWatcherLastWrite = 20;
                     c.ScanFileWatcherMillSeconds = 3000;
 
                     c.EnableAutoReturn = true;
@@ -44,6 +45,7 @@ namespace Spool.Tests
             Assert.True(configuration.EnableFileWatcher);
             Assert.EndsWith("test-spool1-watcher", configuration.FileWatcherPath);
             Assert.Equal(2, configuration.FileWatcherCopyThread);
+            Assert.Equal(20, configuration.FileWatcherLastWrite);
             Assert.Equal(3000, configuration.ScanFileWatcherMillSeconds);
             Assert.True(configuration.EnableAutoReturn);
             Assert.Equal(200, configuration.AutoReturnSeconds);
