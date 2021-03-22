@@ -745,22 +745,29 @@ namespace Spool
                     var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
                     foreach (var file in files)
                     {
-                        if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
+                        try
                         {
-                            _logger.LogDebug("Skip file '{0}',because it is zero size.", file);
-                            continue;
+                            if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
+                            {
+                                _logger.LogDebug("Skip file '{0}',because it is zero size.", file);
+                                continue;
+                            }
+
+                            //Last write time 5s ago
+                            if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
+                            {
+                                using var fs = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
+                                var ext = FilePathUtil.GetPathExtension(file.Name);
+                                await WriteFileAsync(fs, ext);
+                                //Add to delete path
+                                deleteFiles.Add(file.FullName);
+                                _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
+                            }
                         }
-
-                        //Last write time 5s ago
-                        if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
+                        catch (Exception e)
                         {
-                            using var fs = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-                            var ext = FilePathUtil.GetPathExtension(file.Name);
-                            await WriteFileAsync(fs, ext);
-                            //Add to delete path
-                            deleteFiles.Add(file.FullName);
-                            _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
+                            _logger.LogError(e, "Write file '{0}' failed,exception:{1}.", file.FullName, e.Message);
                         }
                     }
 
@@ -770,24 +777,22 @@ namespace Spool
                     _logger.LogError(ex, "File watcher exception:{0}.", ex.Message);
                     //throw ex;
                 }
-                finally
+
+                if (deleteFiles.Any())
                 {
-                    if (deleteFiles.Any())
+                    foreach (var deleteFile in deleteFiles)
                     {
-                        foreach (var deleteFile in deleteFiles)
+                        try
                         {
-                            try
-                            {
-                                FilePathUtil.DeleteFileIfExists(deleteFile);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Delete watcher file '{0}' exception:{1}.", deleteFile, ex.Message);
-                            }
+                            FilePathUtil.DeleteFileIfExists(deleteFile);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Delete watcher file '{0}' exception:{1}.", deleteFile, ex.Message);
                         }
                     }
-
                 }
+
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
 
