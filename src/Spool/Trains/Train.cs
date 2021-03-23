@@ -112,7 +112,7 @@ namespace Spool.Trains
             }
             else
             {
-                _logger.LogDebug("Create train '{0}' directory failed in  file pool '{1}'!");
+                _logger.LogDebug("Create train '{0}' directory failed in  file pool '{1}'!", _configuration.Name, Name);
             }
             _initialized = true;
         }

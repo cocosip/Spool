@@ -33,6 +33,7 @@ namespace Spool.Sample
                     c.EnableFileWatcher = true;
                     c.FileWatcherPath = "D:\\SpoolWatcher";
                     c.EnableAutoReturn = true;
+                    c.FileWatcherLastWrite = 3;
                     c.ScanReturnFileMillSeconds = 2000;
                     c.AutoReturnSeconds = 300;
                 });
@@ -42,7 +43,9 @@ namespace Spool.Sample
             _filePoolFactory = serviceProvider.GetService<IFilePoolFactory>();
             _logger = serviceProvider.GetService<ILogger<Program>>();
 
-            Run();
+            var filePool = _filePoolFactory.GetOrCreate(DefaultFilePool.Name);
+
+            //Run();
 
             Console.ReadLine();
         }
