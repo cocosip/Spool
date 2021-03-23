@@ -42,7 +42,7 @@ namespace Spool.Tests
             Assert.Equal(0, processing1);
 
             //Write third
-            var spoolFile3 = filePool.WriteFile(file2);
+            var spoolFile3 = await filePool.WriteFileAsync(file2);
 
             var spoolFiles = filePool.GetFiles(2);
             Assert.Equal(2, spoolFiles.Count);

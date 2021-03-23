@@ -140,30 +140,15 @@ namespace Spool.Trains
         /// <param name="stream"></param>
         /// <param name="fileExt"></param>
         /// <returns></returns>
-        public Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
-        {
-            return Task.Run<SpoolFile>(() =>
-            {
-                return WriteFile(stream, fileExt);
-            });
-        }
-
-        /// <summary>
-        /// Write file
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="fileExt"></param>
-        /// <returns></returns>
-        public SpoolFile WriteFile(Stream stream, string fileExt)
+        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
             var spoolFile = new SpoolFile(_configuration.Name, Index);
             try
             {
-
                 var path = GenerateFilePath(fileExt);
                 spoolFile.Path = path;
                 //Write file
-                WriteInternal(stream, path);
+                await WriteInternalAsync(stream, path);
 
                 //Write queue
                 _pendingQueue.Enqueue(spoolFile);
@@ -192,8 +177,8 @@ namespace Spool.Trains
                 stream?.Close();
                 stream?.Dispose();
             }
-
         }
+
 
         /// <summary>
         /// Gets the specified number of files
@@ -383,18 +368,18 @@ namespace Spool.Trains
             return path;
         }
 
-        private void WriteInternal(Stream stream, string path)
+        private async Task WriteInternalAsync(Stream stream, string path)
         {
-            using (FileStream fs = File.OpenWrite(path))
-            {
-                var buffers = new byte[_configuration.WriteBufferSize];
-                int r = stream.Read(buffers, 0, buffers.Length);
-                while (r > 0)
-                {
-                    fs.Write(buffers, 0, r);
-                    r = stream.Read(buffers, 0, buffers.Length);
-                }
-            }
+            using var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            await stream.CopyToAsync(fs);
+            //using FileStream fs = File.OpenWrite(path);
+            //var buffers = new byte[_configuration.WriteBufferSize];
+            //int r = stream.Read(buffers, 0, buffers.Length);
+            //while (r > 0)
+            //{
+            //    fs.Write(buffers, 0, r);
+            //    r = stream.Read(buffers, 0, buffers.Length);
+            //}
         }
         #endregion
 

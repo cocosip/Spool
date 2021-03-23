@@ -87,14 +87,6 @@ namespace Spool.Trains
         Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
 
         /// <summary>
-        /// Write file
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="fileExt"></param>
-        /// <returns></returns>
-        SpoolFile WriteFile(Stream stream, string fileExt);
-
-        /// <summary>
         /// Gets the specified number of files
         /// </summary>
         /// <param name="count"></param>
