@@ -52,7 +52,7 @@ namespace Spool
         /// <param name="stream"></param>
         /// <param name="fileExt"></param>
         /// <returns></returns>
-        public Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        public ValueTask<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
             return _filePool.WriteFileAsync(stream, fileExt);
         }
@@ -245,7 +245,7 @@ namespace Spool
         /// <param name="stream"></param>
         /// <param name="fileExt"></param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        public async ValueTask<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
             var train = GetWriteTrain();
             return await train.WriteFileAsync(stream, fileExt);
@@ -719,34 +719,26 @@ namespace Spool
                 var deleteFiles = new List<string>();
                 try
                 {
+                    var pendingWriteFiles = new List<string>();
+
                     var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
                     foreach (var file in files)
                     {
-                        try
+                        if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
                         {
-                            if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
-                            {
-                                _logger.LogDebug("Skip file '{0}',because it is zero size.", file);
-                                continue;
-                            }
-
-                            //Last write time 5s ago
-                            if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
-                            {
-                                using var fs = new FileStream(file.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-                                var ext = FilePathUtil.GetPathExtension(file.Name);
-                                await WriteFileAsync(fs, ext);
-                                //Add to delete path
-                                deleteFiles.Add(file.FullName);
-                                _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file.FullName, Configuration.Name);
-                            }
+                            _logger.LogDebug("Skip file '{0}',because it is zero size.", file);
+                            continue;
                         }
-                        catch (Exception e)
+
+                        //Last write time 5s ago
+                        if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
                         {
-                            _logger.LogError(e, "Write file '{0}' failed,exception:{1}.", file.FullName, e.Message);
+                            pendingWriteFiles.Add(file.FullName);
                         }
                     }
+
+                    var writeSuccessFiles = await WriteFileToPoolAsync(pendingWriteFiles);
+                    deleteFiles.AddRange(writeSuccessFiles);
 
                 }
                 catch (Exception ex)
@@ -772,6 +764,88 @@ namespace Spool
 
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
+
+        private async ValueTask<List<string>> WriteFileToPoolAsync(List<string> files)
+        {
+            var writeFiles = new ConcurrentBag<string>();
+            //Files count > = thread count
+            if (files.Count >= Configuration.FileWatcherCopyThread)
+            {
+
+                //TODO
+                var queue = new ConcurrentQueue<string>(files);
+                var tasks = new List<Task>();
+                for (var i = 0; i < Configuration.FileWatcherCopyThread; i++)
+                {
+                    var task = Task.Run(async () =>
+                    {
+                        while (!queue.IsEmpty)
+                        {
+                            try
+                            {
+                                if (queue.TryDequeue(out string file))
+                                {
+                                    if (await WriteFileAsync(file))
+                                    {
+                                        writeFiles.Add(file);
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Try dequeue failed.");
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Write file to pool failed.");
+                            }
+                        }
+                    });
+                    tasks.Add(task);
+
+                }
+
+                await Task.WhenAll(tasks);
+            }
+            else
+            {
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        if (await WriteFileAsync(file))
+                        {
+                            writeFiles.Add(file);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Write file from '{0}' failed, exception:{1}.", file, ex.Message);
+                    }
+                }
+            }
+
+            return writeFiles.ToList();
+        }
+
+        private async ValueTask<bool> WriteFileAsync(string file)
+        {
+            try
+            {
+                var ext = FilePathUtil.GetPathExtension(file);
+                using var fs = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                await WriteFileAsync(fs, ext);
+                _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file, Configuration.Name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Write file failed.");
+            }
+            return false;
+        }
+
 
         /// <summary>
         /// Dispose

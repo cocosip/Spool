@@ -39,7 +39,7 @@ namespace Spool
         /// <param name="stream"></param>
         /// <param name="fileExt"></param>
         /// <returns></returns>
-        Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
+        ValueTask<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
 
         /// <summary>
         /// Return files to file pool

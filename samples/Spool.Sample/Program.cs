@@ -34,6 +34,8 @@ namespace Spool.Sample
                     c.FileWatcherPath = "D:\\SpoolWatcher";
                     c.EnableAutoReturn = true;
                     c.FileWatcherLastWrite = 3;
+                    c.FileWatcherSkipZeroFile = true;
+                    c.FileWatcherCopyThread = 2;
                     c.ScanReturnFileMillSeconds = 2000;
                     c.AutoReturnSeconds = 300;
                 });

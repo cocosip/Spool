@@ -18,7 +18,7 @@ namespace Spool.Utility
         {
             if (!string.IsNullOrWhiteSpace(path) && path.IndexOf('.') >= 0)
             {
-                return path.Substring(path.LastIndexOf('.'));
+                return path[path.LastIndexOf('.')..];
             }
             return string.Empty;
         }

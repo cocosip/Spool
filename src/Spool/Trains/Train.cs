@@ -140,7 +140,7 @@ namespace Spool.Trains
         /// <param name="stream"></param>
         /// <param name="fileExt"></param>
         /// <returns></returns>
-        public async Task<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
+        public async ValueTask<SpoolFile> WriteFileAsync(Stream stream, string fileExt)
         {
             var spoolFile = new SpoolFile(_configuration.Name, Index);
             try
@@ -368,7 +368,7 @@ namespace Spool.Trains
             return path;
         }
 
-        private async Task WriteInternalAsync(Stream stream, string path)
+        private async ValueTask WriteInternalAsync(Stream stream, string path)
         {
             using var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             await stream.CopyToAsync(fs);
