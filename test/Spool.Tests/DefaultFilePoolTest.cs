@@ -24,7 +24,7 @@ namespace Spool.Tests
         public async Task WriteFile_GetFile_Test()
         {
             var configuration = _options.FilePools.GetConfiguration<DefaultFilePool>();
-            FilePathUtil.DeleteDirIfExist(configuration.Path, true);
+            DirectoryHelper.DeleteIfExist(configuration.Path, true);
 
             var filePool = _filePoolFactory.GetOrCreate<DefaultFilePool>();
             var content = Encoding.UTF8.GetBytes("Hello,Spool Unit Test!");

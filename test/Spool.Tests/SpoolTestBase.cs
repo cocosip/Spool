@@ -10,7 +10,7 @@ namespace Spool.Tests
         protected IServiceProvider ServiceProvider { get; private set; }
         public SpoolTestBase()
         {
-            FilePathUtil.DeleteDirIfExist(Path.Combine(AppContext.BaseDirectory, "default-pool"), true);
+            DirectoryHelper.DeleteIfExist(Path.Combine(AppContext.BaseDirectory, "default-pool"), true);
 
             IServiceCollection services = new ServiceCollection();
             services.AddLogging()

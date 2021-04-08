@@ -18,7 +18,7 @@ namespace Spool
         private readonly IServiceProvider _serviceProvider;
         private readonly IFilePoolConfigurationSelector _configurationSelector;
 
-        private readonly object _sync = new object();
+        private readonly object _sync = new();
         private readonly ConcurrentDictionary<string, IFilePool> _filePools;
 
         /// <summary>

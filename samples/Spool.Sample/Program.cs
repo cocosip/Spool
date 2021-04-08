@@ -24,6 +24,9 @@ namespace Spool.Sample
                 })
                 .AddSpool();
 
+            Console.WriteLine(Path.GetExtension("D:\\11.txt"));
+            Console.WriteLine(Path.GetExtension(""));
+
             services.Configure<SpoolOptions>(options =>
             {
                 options.FilePools.ConfigureDefault(c =>
@@ -47,7 +50,7 @@ namespace Spool.Sample
 
             var filePool = _filePoolFactory.GetOrCreate(DefaultFilePool.Name);
 
-            //Run();
+            Run();
 
             Console.ReadLine();
         }

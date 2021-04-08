@@ -106,7 +106,7 @@ namespace Spool.Trains
             }
 
             //Create train directory
-            if (FilePathUtil.CreateIfNotExists(Path))
+            if (DirectoryHelper.CreateIfNotExists(Path))
             {
                 _logger.LogDebug("Create train directory, [FilePool:'{0}',FilePool Path:'{1}',Train :'{2}'].", _configuration.Name, _configuration.Path, Index);
             }
@@ -245,7 +245,7 @@ namespace Spool.Trains
                 {
                     if (_progressingDict.TryRemove(spoolFile.GenerateCode(), out SpoolFile deleteFile))
                     {
-                        FilePathUtil.DeleteFileIfExists(deleteFile.Path);
+                        FileHelper.DeleteIfExists(deleteFile.Path);
                     }
                     else
                     {

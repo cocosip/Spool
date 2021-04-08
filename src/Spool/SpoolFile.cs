@@ -1,5 +1,4 @@
-﻿using Spool.Utility;
-using System;
+﻿using System;
 
 namespace Spool
 {
@@ -26,13 +25,7 @@ namespace Spool
         /// <summary>
         /// File extension
         /// </summary>
-        public string FileExt
-        {
-            get
-            {
-                return FilePathUtil.GetPathExtension(Path);
-            }
-        }
+        public string FileExt => System.IO.Path.GetExtension(Path);
 
         /// <summary>
         /// Ctor

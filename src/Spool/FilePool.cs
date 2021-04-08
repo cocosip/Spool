@@ -164,7 +164,7 @@ namespace Spool
             }
 
             //Create current file pool 
-            if (FilePathUtil.CreateIfNotExists(Configuration.Path))
+            if (DirectoryHelper.CreateIfNotExists(Configuration.Path))
             {
                 _logger.LogDebug("Create file pool '{0}' file directory '{1}'.", Configuration.Name, Configuration.Path);
             }
@@ -185,7 +185,7 @@ namespace Spool
                 {
                     throw new ArgumentException("FileWatcherPath was null!");
                 }
-                if (FilePathUtil.CreateIfNotExists(Configuration.FileWatcherPath))
+                if (DirectoryHelper.CreateIfNotExists(Configuration.FileWatcherPath))
                 {
                     _logger.LogInformation("Creat file pool '{0}' file watcher in '{1}'.", Configuration.Name, Configuration.FileWatcherPath);
                 }
@@ -489,7 +489,7 @@ namespace Spool
                         }
 
                         //Delete train files
-                        if (!FilePathUtil.DeleteDirIfExist(e.Train.Path, false))
+                        if (!DirectoryHelper.DeleteIfExist(e.Train.Path, false))
                         {
                             _logger.LogWarning("Try delete train was not empty.");
                         }
@@ -721,7 +721,7 @@ namespace Spool
                 {
                     var pendingWriteFiles = new List<string>();
 
-                    var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
+                    var files = DirectoryHelper.RecursiveGetFileInfos(Configuration.FileWatcherPath);
                     foreach (var file in files)
                     {
                         if (Configuration.FileWatcherSkipZeroFile && file.Length <= 0)
@@ -753,7 +753,7 @@ namespace Spool
                     {
                         try
                         {
-                            FilePathUtil.DeleteFileIfExists(deleteFile);
+                            FileHelper.DeleteIfExists(deleteFile);
                         }
                         catch (Exception ex)
                         {
@@ -833,7 +833,7 @@ namespace Spool
         {
             try
             {
-                var ext = FilePathUtil.GetPathExtension(file);
+                var ext = System.IO.Path.GetExtension(file);
                 using var fs = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 await WriteFileAsync(fs, ext);
                 _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file, Configuration.Name);
