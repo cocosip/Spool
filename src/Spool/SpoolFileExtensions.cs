@@ -14,7 +14,7 @@ namespace Spool
         /// </summary>
         public static string GenerateCode(this SpoolFile file)
         {
-            var source = $"{file.FilePool}{file.TrainIndex}{file.Path}";
+            var source = $"{file.FilePool}{file.Index}{file.Path}";
             var sourceBytes = Encoding.UTF8.GetBytes(source);
             using (var sha1 = SHA1.Create())
             {

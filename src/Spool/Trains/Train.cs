@@ -228,7 +228,7 @@ namespace Spool.Trains
                 }
                 else
                 {
-                    _logger.LogDebug("Return file not exist, the file may be released。FilePool :'{0}',Train:'{1}',Path:'{2}'.", spoolFile.FilePool, spoolFile.TrainIndex, spoolFile.Path);
+                    _logger.LogDebug("Return file not exist, the file may be released。FilePool :'{0}',Train:'{1}',Path:'{2}'.", spoolFile.FilePool, spoolFile.Index, spoolFile.Path);
                 }
             }
         }
@@ -350,7 +350,7 @@ namespace Spool.Trains
                 var spoolFile = new SpoolFile()
                 {
                     FilePool = _configuration.Name,
-                    TrainIndex = Index,
+                    Index = Index,
                     Path = file.FullName
                 };
                 _pendingQueue.Enqueue(spoolFile);

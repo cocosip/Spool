@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Spool.Trains;
 using Spool.Utility;
+using Spool.Worker;
 using System;
 
 namespace Spool
@@ -23,6 +24,7 @@ namespace Spool
             services.Configure(configure);
 
             services
+                .AddSingleton<IWorkerDispatcherFactory, DefaultWorkerDispatcherFactory>()
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<IFilePoolFactory, DefaultFilePoolFactory>()
                 .AddTransient(typeof(IFilePool<>), typeof(FilePool<>))

@@ -30,7 +30,7 @@ namespace Spool.Tests
             var content = Encoding.UTF8.GetBytes("Hello,Spool Unit Test!");
             var spoolFile1 = await filePool.WriteFileAsync(new MemoryStream(content), ".txt");
             Assert.Equal(DefaultFilePool.Name, spoolFile1.FilePool);
-            Assert.Equal(1, spoolFile1.TrainIndex);
+            Assert.Equal(1, spoolFile1.Index);
 
             var testPath = PathUtil.MapPath("../../../test-files");
             var file2 = Path.Combine(testPath, "t1.txt");

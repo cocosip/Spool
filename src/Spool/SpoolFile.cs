@@ -15,7 +15,7 @@ namespace Spool
         /// <summary>
         /// The index of train
         /// </summary>
-        public int TrainIndex { get; set; }
+        public int Index { get; set; }
 
         /// <summary>
         /// File path
@@ -54,7 +54,7 @@ namespace Spool
         public SpoolFile(string filePool, int trainIndex, string path)
         {
             FilePool = filePool;
-            TrainIndex = trainIndex;
+            Index = trainIndex;
             Path = path;
         }
 
@@ -64,7 +64,7 @@ namespace Spool
         /// <returns></returns>
         public SpoolFile Clone()
         {
-            return new SpoolFile(FilePool, TrainIndex, Path);
+            return new SpoolFile(FilePool, Index, Path);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Spool
                 return false;
             }
 
-            return FilePool == other.FilePool && TrainIndex == other.TrainIndex && Path == other.Path;
+            return FilePool == other.FilePool && Index == other.Index && Path == other.Path;
         }
 
         /// <summary>
@@ -103,7 +103,16 @@ namespace Spool
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(Path) | TrainIndex.GetHashCode();
+            return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(Path) | Index.GetHashCode();
+        }
+
+        /// <summary>
+        /// ToString
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"[FilePool:{FilePool},Index:{Index},Path:{Path}]";
         }
     }
 }

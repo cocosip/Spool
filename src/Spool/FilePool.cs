@@ -257,7 +257,7 @@ namespace Spool
         /// <param name="files"></param>
         public void ReturnFiles(params SpoolFile[] files)
         {
-            var groupSpoolFiles = files.GroupBy(x => x.TrainIndex);
+            var groupSpoolFiles = files.GroupBy(x => x.Index);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = GetTrainByIndex(groupSpoolFile.Key);
@@ -283,7 +283,7 @@ namespace Spool
         /// <param name="files"></param>
         public void ReleaseFiles(params SpoolFile[] files)
         {
-            var groupSpoolFiles = files.GroupBy(x => x.TrainIndex);
+            var groupSpoolFiles = files.GroupBy(x => x.Index);
             foreach (var groupSpoolFile in groupSpoolFiles)
             {
                 var train = GetTrainByIndex(groupSpoolFile.Key);
