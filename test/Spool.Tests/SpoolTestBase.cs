@@ -21,7 +21,7 @@ namespace Spool.Tests
                         c.Name = DefaultFilePool.Name;
                         c.Path = Path.Combine(AppContext.BaseDirectory, "default-pool");
                         c.WriteBufferSize = 1024 * 1024 * 5;
-                        c.TrainMaxFileCount = 2;
+                        c.MaxFileCount = 2;
                         c.EnableFileWatcher = true;
                         c.FileWatcherPath = Path.Combine(AppContext.BaseDirectory, "default-pool-watcher");
                         c.FileWatcherCopyThread = 2;

@@ -26,7 +26,7 @@ namespace Spool.Worker
         public WorkerState State => _state;
 
         private readonly ILogger _logger;
-
+        private readonly FilePoolConfiguration _configuration;
         /// <summary>
         /// 序号
         /// </summary>
@@ -72,14 +72,15 @@ namespace Spool.Worker
         /// <summary>
         /// Ctor
         /// </summary>
-        public DefaultFileWorker(ILogger<DefaultFileWorker> logger, string filePoolName, string filePoolPath, int writeBufferSize, int maxFileCount, int index)
+        public DefaultFileWorker(ILogger<DefaultFileWorker> logger, FilePoolConfiguration configuration, int index)
         {
             _logger = logger;
+            _configuration = configuration;
 
-            _filePoolName = filePoolName;
-            _filePoolPath = filePoolPath;
-            _writeBufferSize = writeBufferSize;
-            _maxFileCount = maxFileCount;
+            _filePoolName = _configuration.Name;
+            _filePoolPath = _configuration.Path;
+            _writeBufferSize = _configuration.WriteBufferSize;
+            _maxFileCount = _configuration.MaxFileCount;
             _index = index;
             Name = FileWorkerUtil.GenerateName(_index);
             Path = FileWorkerUtil.GeneratePath(_filePoolPath, Name);
@@ -110,8 +111,10 @@ namespace Spool.Worker
             {
                 var path = GenerateFilePath(ext);
                 spoolFile.Path = path;
-                //Write file
-                await WriteInternalAsync(stream, path);
+
+                //写文件
+                using var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                await stream.CopyToAsync(fs);
 
                 //Write queue
                 _pendingQueue.Enqueue(spoolFile);
@@ -120,7 +123,7 @@ namespace Spool.Worker
                 if (_pendingQueue.Count + _progressingDict.Count > _maxFileCount)
                 {
                     _logger.LogInformation("FileWorker 写入文件已满,{0}.", Info());
-                    //TODO 写满时的操作
+                    //TODO 当前FileWorker文件数量已满,需要写下一个
                 }
 
                 return spoolFile;
@@ -163,6 +166,34 @@ namespace Spool.Worker
             }
         }
 
+        /// <summary>
+        /// 释放一个文件 
+        /// </summary>
+        /// <param name="spoolFile"></param>
+        public void ReleaseFile(SpoolFile spoolFile)
+        {
+            try
+            {
+                if (_progressingDict.TryRemove(spoolFile.GenerateCode(), out SpoolFile deleteFile))
+                {
+                    FileHelper.DeleteIfExists(deleteFile.Path);
+                }
+                else
+                {
+                    _logger.LogDebug("无法从队列中删除释放的文件,该文件可能已经被释放:{0}.", deleteFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("释放文件'{0}'失败,异常信息:{1}.", spoolFile.Path, ex.Message);
+                throw;
+            }
+            finally
+            {
+                //TODO
+            }
+        }
+
 
         /// <summary>
         /// 生成文件存储的路径地址
@@ -174,18 +205,6 @@ namespace Spool.Worker
             var fileName = $"{Guid.NewGuid()}{ext}";
             var path = System.IO.Path.Combine(_filePoolPath, $"{Name}", fileName);
             return path;
-        }
-
-        /// <summary>
-        /// 将流写入到文件
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private async Task WriteInternalAsync(Stream stream, string path)
-        {
-            using var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            await stream.CopyToAsync(fs);
         }
 
     }

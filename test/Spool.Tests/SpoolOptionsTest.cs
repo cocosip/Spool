@@ -20,7 +20,7 @@ namespace Spool.Tests
                     c.Name = "test-spool1";
                     c.Path = Path.Combine(AppContext.BaseDirectory, "test-spool1");
                     c.WriteBufferSize = 1024 * 1024 * 2;
-                    c.TrainMaxFileCount = 300;
+                    c.MaxFileCount = 300;
                     c.EnableFileWatcher = true;
                     c.FileWatcherPath = Path.Combine(AppContext.BaseDirectory, "test-spool1-watcher");
                     c.FileWatcherCopyThread = 2;
@@ -41,7 +41,7 @@ namespace Spool.Tests
             Assert.Equal("test-spool1", configuration.Name);
             Assert.EndsWith("test-spool1", configuration.Path);
             Assert.Equal(1024 * 1024 * 2, configuration.WriteBufferSize);
-            Assert.Equal(300, configuration.TrainMaxFileCount);
+            Assert.Equal(300, configuration.MaxFileCount);
             Assert.True(configuration.EnableFileWatcher);
             Assert.EndsWith("test-spool1-watcher", configuration.FileWatcherPath);
             Assert.Equal(2, configuration.FileWatcherCopyThread);

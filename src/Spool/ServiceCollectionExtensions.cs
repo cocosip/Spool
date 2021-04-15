@@ -25,6 +25,7 @@ namespace Spool
 
             services
                 .AddSingleton<IWorkerDispatcherFactory, DefaultWorkerDispatcherFactory>()
+                .AddTransient<IFileWorkerFactory, DefaultFileWorkerFactory>()
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<IFilePoolFactory, DefaultFilePoolFactory>()
                 .AddTransient(typeof(IFilePool<>), typeof(FilePool<>))
