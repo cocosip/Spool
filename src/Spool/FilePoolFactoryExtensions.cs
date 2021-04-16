@@ -1,12 +1,9 @@
 ﻿namespace Spool
 {
-    /// <summary>
-    /// File pool factory extensions
-    /// </summary>
     public static class FilePoolFactoryExtensions
     {
         /// <summary>
-        /// Get or create file pool with generic type
+        /// 根据库泛型获取或者创建文件池
         /// </summary>
         /// <typeparam name="TFilePool"></typeparam>
         /// <param name="filePoolFactory"></param>

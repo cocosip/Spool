@@ -1,12 +1,12 @@
 ﻿namespace Spool
 {
     /// <summary>
-    /// File pool configuration selector
+    /// 文件池配置筛选器
     /// </summary>
     public interface IFilePoolConfigurationSelector
     {
         /// <summary>
-        /// Get file pool configuration by name
+        /// 根据名称获取文件池配置
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>

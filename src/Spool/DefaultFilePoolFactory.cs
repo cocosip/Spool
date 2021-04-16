@@ -1,62 +1,47 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Spool.Trains;
-using Spool.Utility;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Spool
 {
-    /// <summary>
-    /// Default file pool factory
-    /// </summary>
     public class DefaultFilePoolFactory : IFilePoolFactory
     {
-        private readonly ILogger _logger;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IFilePoolConfigurationSelector _configurationSelector;
+        protected ILogger Logger { get; }
+        protected IFilePoolConfigurationSelector ConfigurationSelector { get; }
 
         private readonly object _sync = new();
-        private readonly ConcurrentDictionary<string, IFilePool> _filePools;
+        private readonly ConcurrentDictionary<string, IFilePool> _filePoolDict;
 
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="serviceProvider"></param>
-        /// <param name="configurationSelector"></param>
         public DefaultFilePoolFactory(
             ILogger<DefaultFilePoolFactory> logger,
-            IServiceProvider serviceProvider,
             IFilePoolConfigurationSelector configurationSelector)
         {
-            _logger = logger;
-            _serviceProvider = serviceProvider;
-            _configurationSelector = configurationSelector;
-            _filePools = new ConcurrentDictionary<string, IFilePool>();
+            Logger = logger;
+            ConfigurationSelector = configurationSelector;
+
+            _filePoolDict = new ConcurrentDictionary<string, IFilePool>();
         }
 
         /// <summary>
-        /// Get or create file pool by name
+        /// 获取或者创建一个文件池
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public IFilePool GetOrCreate(string name)
+        public virtual IFilePool GetOrCreate(string name)
         {
-            if (!_filePools.TryGetValue(name, out IFilePool filePool))
+            if (!_filePoolDict.TryGetValue(name, out IFilePool filePool))
             {
                 lock (_sync)
                 {
-                    if (!_filePools.TryGetValue(name, out filePool))
+                    if (!_filePoolDict.TryGetValue(name, out filePool))
                     {
-                        filePool = BuildFilePool(name);
-                        filePool.Setup();
+                        //根据名称创建文件池
+                        filePool = CreateFilePool(name);
+                        //TODO Setup 初始化
 
-                        if (!_filePools.TryAdd(name, filePool))
+                        if (!_filePoolDict.TryAdd(name, filePool))
                         {
-                            _logger.LogWarning("Could not add file pool '{0}' to dict.", name);
+                            Logger.LogWarning("Add file pool to dict failed.");
                         }
                     }
                 }
@@ -65,34 +50,15 @@ namespace Spool
             return filePool;
         }
 
-        /// <summary>
-        /// Get all file pools
-        /// </summary>
-        /// <returns></returns>
-        public List<IFilePool> GetAllFilePools()
-        {
-            return _filePools.Values.ToList();
-        }
 
-
-        /// <summary>
-        /// Create a new file pool
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private IFilePool BuildFilePool(string name)
+        protected virtual IFilePool CreateFilePool(string name)
         {
-            var configuration = _configurationSelector.Get(name);
+            var configuration = ConfigurationSelector.Get(name);
             if (configuration == null)
             {
-                throw new ArgumentNullException($"Could not find any configuration for file pool '{name}', check your configurations.");
+                throw new ArgumentNullException($"Could not find configuration by name '{name}',check your configuration.");
             }
-            var logger = _serviceProvider.GetService<ILogger<FilePool>>();
-            var trainFactory = _serviceProvider.GetService<ITrainFactory>();
-            var scheduleService = _serviceProvider.GetService<IScheduleService>();
-            IFilePool filePool = new FilePool(logger, configuration, scheduleService, trainFactory);
-            _logger.LogDebug("Create a new file pool by name '{0}'", name);
-            return filePool;
+            return default;
         }
 
     }

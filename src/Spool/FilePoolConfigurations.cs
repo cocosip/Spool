@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Spool
 {
     /// <summary>
-    /// File pool configurations
+    /// 文件池配置(多个文件池的配置)
     /// </summary>
     public class FilePoolConfigurations
     {
@@ -12,26 +12,21 @@ namespace Spool
 
         private readonly Dictionary<string, FilePoolConfiguration> _filePools;
 
-        /// <summary>
-        /// ctor
-        /// </summary>
         public FilePoolConfigurations()
         {
             _filePools = new Dictionary<string, FilePoolConfiguration>()
             {
-                //Add default file pool
                 [FilePoolNameAttribute.GetFilePoolName<DefaultFilePool>()] = new FilePoolConfiguration()
             };
         }
 
         /// <summary>
-        /// Configure file pool by generics type
+        /// 配置泛型类型的文件池
         /// </summary>
         /// <typeparam name="TFilePool"></typeparam>
         /// <param name="configureAction"></param>
         /// <returns></returns>
-        public FilePoolConfigurations Configure<TFilePool>(
-           Action<FilePoolConfiguration> configureAction)
+        public FilePoolConfigurations Configure<TFilePool>(Action<FilePoolConfiguration> configureAction)
         {
             return Configure(
                 FilePoolNameAttribute.GetFilePoolName<TFilePool>(),
@@ -40,7 +35,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure file pool by name
+        /// 根据文件池名称配置文件池
         /// </summary>
         /// <param name="name"></param>
         /// <param name="configureAction"></param>
@@ -61,7 +56,8 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure default file pool
+        /// 配置默认的文件池
+        /// 默认文件池类型<see cref="DefaultFilePool"/>,文件池名称为:default
         /// </summary>
         /// <param name="configureAction"></param>
         /// <returns></returns>
@@ -72,7 +68,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Configure all file pool
+        /// 配置全部的文件池
         /// </summary>
         /// <param name="configureAction"></param>
         /// <returns></returns>
@@ -87,7 +83,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Get file pool configuration by generics type
+        /// 根据泛型类型获取文件池配置
         /// </summary>
         /// <typeparam name="TFilePool"></typeparam>
         /// <returns></returns>
@@ -97,7 +93,7 @@ namespace Spool
         }
 
         /// <summary>
-        /// Get file pool configuration by name
+        /// 根据名称获取文件池配置
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -106,6 +102,5 @@ namespace Spool
             _filePools.TryGetValue(name, out FilePoolConfiguration configuration);
             return configuration ?? Default;
         }
-
     }
 }

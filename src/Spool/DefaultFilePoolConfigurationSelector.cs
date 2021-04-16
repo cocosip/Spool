@@ -3,29 +3,24 @@
 namespace Spool
 {
     /// <summary>
-    /// File pool configuration selector from configuration
+    /// 文件池配置筛选器
     /// </summary>
     public class DefaultFilePoolConfigurationSelector : IFilePoolConfigurationSelector
     {
-        private readonly SpoolOptions _options;
-
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="options"></param>
+        protected SpoolOptions Options { get; }
         public DefaultFilePoolConfigurationSelector(IOptions<SpoolOptions> options)
         {
-            _options = options.Value;
+            Options = options.Value;
         }
 
         /// <summary>
-        /// Get file pool configuration by name
+        /// 根据名称获取文件池配置
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public FilePoolConfiguration Get(string name)
+        public virtual FilePoolConfiguration Get(string name)
         {
-            return _options.FilePools.GetConfiguration(name);
+            return Options.FilePools.GetConfiguration(name);
         }
 
     }
