@@ -716,7 +716,7 @@ namespace Spool
         {
             _scheduleService.StartTask(_fileWatcherTaskName, async () =>
             {
-                var deleteFiles = new List<string>();
+                //var deleteFiles = new List<string>();
                 try
                 {
                     var pendingWriteFiles = new List<string>();
@@ -737,8 +737,7 @@ namespace Spool
                         }
                     }
 
-                    var writeSuccessFiles = await WriteFileToPoolAsync(pendingWriteFiles);
-                    deleteFiles.AddRange(writeSuccessFiles);
+                    await WriteFileToPoolAsync(pendingWriteFiles);
 
                 }
                 catch (Exception ex)
@@ -747,31 +746,14 @@ namespace Spool
                     //throw ex;
                 }
 
-                if (deleteFiles.Any())
-                {
-                    foreach (var deleteFile in deleteFiles)
-                    {
-                        try
-                        {
-                            FilePathUtil.DeleteFileIfExists(deleteFile);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Delete watcher file '{0}' exception:{1}.", deleteFile, ex.Message);
-                        }
-                    }
-                }
-
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
 
-        private async ValueTask<List<string>> WriteFileToPoolAsync(List<string> files)
+        private async Task WriteFileToPoolAsync(List<string> files)
         {
-            var writeFiles = new ConcurrentBag<string>();
             //Files count > = thread count
             if (files.Count >= Configuration.FileWatcherCopyThread)
             {
-
                 //TODO
                 var queue = new ConcurrentQueue<string>(files);
                 var tasks = new List<Task>();
@@ -787,7 +769,7 @@ namespace Spool
                                 {
                                     if (await WriteFileAsync(file))
                                     {
-                                        writeFiles.Add(file);
+                                        FilePathUtil.DeleteFileIfExists(file);
                                     }
                                 }
                                 else
@@ -803,7 +785,6 @@ namespace Spool
                         }
                     });
                     tasks.Add(task);
-
                 }
 
                 await Task.WhenAll(tasks);
@@ -816,7 +797,7 @@ namespace Spool
                     {
                         if (await WriteFileAsync(file))
                         {
-                            writeFiles.Add(file);
+                            FilePathUtil.DeleteFileIfExists(file);
                         }
                     }
                     catch (Exception ex)
@@ -825,11 +806,9 @@ namespace Spool
                     }
                 }
             }
-
-            return writeFiles.ToList();
         }
 
-        private async ValueTask<bool> WriteFileAsync(string file)
+        private async Task<bool> WriteFileAsync(string file)
         {
             try
             {
