@@ -109,6 +109,7 @@ namespace Spool
     {
         private bool _isSetup = false;
         private readonly ManualResetEventSlim _sync;
+        private bool _isWatcherWritting = false;
 
         private readonly ILogger _logger;
         private readonly IScheduleService _scheduleService;
@@ -716,9 +717,16 @@ namespace Spool
         {
             _scheduleService.StartTask(_fileWatcherTaskName, async () =>
             {
-                //var deleteFiles = new List<string>();
                 try
                 {
+                    if (_isWatcherWritting)
+                    {
+                        _logger.LogDebug("File pool '{0}' is watcher writing.", Configuration.Name);
+                        return;
+                    }
+
+                    _isWatcherWritting = true;
+
                     var pendingWriteFiles = new List<string>();
 
                     var files = FilePathUtil.RecursiveGetFileInfos(Configuration.FileWatcherPath);
@@ -745,6 +753,10 @@ namespace Spool
                     _logger.LogError(ex, "File watcher exception:{0}.", ex.Message);
                     //throw ex;
                 }
+                finally
+                {
+                    _isWatcherWritting = false;
+                }
 
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
@@ -752,6 +764,7 @@ namespace Spool
         private async Task WriteFileToPoolAsync(List<string> files)
         {
             //Files count > = thread count
+
             if (files.Count >= Configuration.FileWatcherCopyThread)
             {
                 //TODO
