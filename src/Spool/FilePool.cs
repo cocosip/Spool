@@ -745,7 +745,7 @@ namespace Spool
                         }
                     }
 
-                    await WriteFileToPoolAsync(pendingWriteFiles);
+                    await WriteWatcherFileToPoolAsync(pendingWriteFiles);
 
                 }
                 catch (Exception ex)
@@ -761,7 +761,7 @@ namespace Spool
             }, 5000, Configuration.ScanFileWatcherMillSeconds);
         }
 
-        private async Task WriteFileToPoolAsync(List<string> files)
+        private async Task WriteWatcherFileToPoolAsync(List<string> files)
         {
             //Files count > = thread count
 
@@ -772,7 +772,7 @@ namespace Spool
                 var tasks = new List<Task>();
                 for (var i = 0; i < Configuration.FileWatcherCopyThread; i++)
                 {
-                    var task = Task.Run(() =>
+                    var task = Task.Run(async () =>
                     {
                         while (!queue.IsEmpty)
                         {
@@ -780,10 +780,7 @@ namespace Spool
                             {
                                 if (queue.TryDequeue(out string file))
                                 {
-                                    if (MoveInFile(file))
-                                    {
-                                        FilePathUtil.DeleteFileIfExists(file);
-                                    }
+                                    await WriteWatcherFileAsync(file);
                                 }
                                 else
                                 {
@@ -808,10 +805,7 @@ namespace Spool
                 {
                     try
                     {
-                        if (MoveInFile(file))
-                        {
-                            FilePathUtil.DeleteFileIfExists(file);
-                        }
+                        await WriteWatcherFileAsync(file);
                     }
                     catch (Exception ex)
                     {
@@ -821,19 +815,26 @@ namespace Spool
             }
         }
 
-        private bool MoveInFile(string file)
+        private async Task WriteWatcherFileAsync(string file)
         {
             try
             {
-                var train = GetWriteTrain();
-                train.MoveIn(file);
-                return true;
+                //获取根目录
+                if (FilePathUtil.SameRootPath(file, Configuration.Path))
+                {
+                    var train = GetWriteTrain();
+                    train.MoveIn(file);
+                }
+                else
+                {
+                    await this.WriteFileAsync(file);
+                    FilePathUtil.DeleteFileIfExists(file);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Move in file failed.");
             }
-            return false;
         }
 
 

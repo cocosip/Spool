@@ -87,5 +87,17 @@ namespace Spool.Utility
             return files;
         }
 
+
+        /// <summary>
+        /// Is same root path
+        /// </summary>
+        /// <param name="path1"></param>
+        /// <param name="path2"></param>
+        /// <returns></returns>
+        public static bool SameRootPath(string path1, string path2)
+        {
+            return Path.GetPathRoot(path1) == Path.GetPathRoot(path2);
+        }
+
     }
 }

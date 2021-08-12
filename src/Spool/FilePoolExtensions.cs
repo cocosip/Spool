@@ -17,7 +17,7 @@ namespace Spool
         /// <returns></returns>
         public static ValueTask<SpoolFile> WriteFileAsync(this IFilePool filePool, string fileName)
         {
-            var fs = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+            using var fs = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
             var ext = FilePathUtil.GetPathExtension(fileName);
             return filePool.WriteFileAsync(fs, ext);
         }

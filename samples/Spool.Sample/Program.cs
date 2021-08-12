@@ -29,7 +29,7 @@ namespace Spool.Sample
                 options.FilePools.ConfigureDefault(c =>
                 {
                     c.Name = DefaultFilePool.Name;
-                    c.Path = "D:\\SpoolTest";
+                    c.Path = "E:\\SpoolTest";
                     c.EnableFileWatcher = true;
                     c.FileWatcherPath = "D:\\SpoolWatcher";
                     c.EnableAutoReturn = true;
