@@ -179,6 +179,46 @@ namespace Spool.Trains
             }
         }
 
+        /// <summary>
+        /// Move source file to pool
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public SpoolFile MoveIn(string filePath)
+        {
+            var spoolFile = new SpoolFile(_configuration.Name, Index);
+            try
+            {
+                var ext = FilePathUtil.GetPathExtension(filePath);
+                var path = GenerateFilePath(ext);
+                spoolFile.Path = path;
+
+                //直接移动
+                File.Move(filePath, path);
+
+                //Write queue
+                _pendingQueue.Enqueue(spoolFile);
+
+                //是否写满了(需要按照待处理的文件数量+处理中的数量进行计算,避免当关闭自动归还功能时,磁盘下的文件还有大量的堆积)
+                if (_pendingQueue.Count + _progressingDict.Count > _configuration.TrainMaxFileCount)
+                {
+                    var info = BuildInfo();
+                    var args = new TrainWriteOverEventArgs()
+                    {
+                        Train = info,
+                    };
+                    OnWriteOver?.Invoke(this, args);
+                }
+
+                return spoolFile;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Move file to train failed, FilePool:'{0}',Train:'{1}',FilePath:'{2}',Exception:{3}.", _configuration.Name, Index, filePath, ex.Message);
+                throw ex;
+            }
+        }
+
 
         /// <summary>
         /// Gets the specified number of files
@@ -381,6 +421,7 @@ namespace Spool.Trains
             //    r = stream.Read(buffers, 0, buffers.Length);
             //}
         }
+
         #endregion
 
 

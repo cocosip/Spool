@@ -772,7 +772,7 @@ namespace Spool
                 var tasks = new List<Task>();
                 for (var i = 0; i < Configuration.FileWatcherCopyThread; i++)
                 {
-                    var task = Task.Run(async () =>
+                    var task = Task.Run(() =>
                     {
                         while (!queue.IsEmpty)
                         {
@@ -780,7 +780,7 @@ namespace Spool
                             {
                                 if (queue.TryDequeue(out string file))
                                 {
-                                    if (await WriteFileAsync(file))
+                                    if (MoveInFile(file))
                                     {
                                         FilePathUtil.DeleteFileIfExists(file);
                                     }
@@ -808,7 +808,7 @@ namespace Spool
                 {
                     try
                     {
-                        if (await WriteFileAsync(file))
+                        if (MoveInFile(file))
                         {
                             FilePathUtil.DeleteFileIfExists(file);
                         }
@@ -821,19 +821,17 @@ namespace Spool
             }
         }
 
-        private async Task<bool> WriteFileAsync(string file)
+        private bool MoveInFile(string file)
         {
             try
             {
-                var ext = FilePathUtil.GetPathExtension(file);
-                using var fs = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                await WriteFileAsync(fs, ext);
-                _logger.LogDebug("Watcher file '{0}' was written in '{1}'.", file, Configuration.Name);
+                var train = GetWriteTrain();
+                train.MoveIn(file);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Write file failed.");
+                _logger.LogError(ex, "Move in file failed.");
             }
             return false;
         }

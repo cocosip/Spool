@@ -87,6 +87,13 @@ namespace Spool.Trains
         ValueTask<SpoolFile> WriteFileAsync(Stream stream, string fileExt);
 
         /// <summary>
+        /// Move source file to pool
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        SpoolFile MoveIn(string filePath);
+
+        /// <summary>
         /// Gets the specified number of files
         /// </summary>
         /// <param name="count"></param>
