@@ -738,7 +738,7 @@ namespace Spool
                             continue;
                         }
 
-                        //Last write time 5s ago
+                        //Last write time 30s ago
                         if (file.LastWriteTime < DateTime.Now.AddSeconds(-Configuration.FileWatcherLastWrite))
                         {
                             pendingWriteFiles.Add(file.FullName);
