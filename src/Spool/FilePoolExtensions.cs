@@ -15,11 +15,12 @@ namespace Spool
         /// <param name="filePool"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static ValueTask<SpoolFile> WriteFileAsync(this IFilePool filePool, string fileName)
+        public static async ValueTask<SpoolFile> WriteFileAsync(this IFilePool filePool, string fileName)
         {
             using var fs = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
             var ext = FilePathUtil.GetPathExtension(fileName);
-            return filePool.WriteFileAsync(fs, ext);
+            var spoolFile = await filePool.WriteFileAsync(fs, ext);
+            return spoolFile;
         }
     }
 }
