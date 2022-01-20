@@ -1,76 +1,80 @@
-﻿using System;
+using System;
 
 namespace Spool
 {
-    /// <summary>
-    /// File pool configuration info
-    /// </summary>
     [Serializable]
     public class FilePoolConfiguration
     {
         /// <summary>
-        /// File pool name
+        /// 文件池的名称
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// Store path
+        /// 文件池的存储路径
         /// </summary>
         public string Path { get; set; }
 
         /// <summary>
-        /// Write file buffer size
+        /// 每个Worker下的存储的最大的文件数量,当超过该值时,将不会再写入。默认:5000
         /// </summary>
-        public int WriteBufferSize { get; set; } = 1024 * 1024 * 5;
+        public int WorkerMaxFile { get; set; } = 5000;
 
         /// <summary>
-        /// Max file count in one train , if exceed this number, it will create a new train
+        /// 用来进行读的Worker的数量,默认:3
         /// </summary>
-        public int TrainMaxFileCount { get; set; } = 65535;
+        public int ReadWorkerCount { get; set; } = 3;
 
         /// <summary>
-        /// Enable file watcher
+        /// 用来写入的Worker的数量,默认:3
+        /// </summary>
+        public int WriteWorkerCount { get; set; } = 3;
+
+        /// <summary>
+        /// 是否开启自动归还文件的操作,当开启之后,如果没有主动调用释放文件的方法,在超过指定的时间后<see cref="AutoReturnSeconds"/>,将会自动归还(重新放到队列中)。 默认:false
+        /// </summary>
+        public bool EnableAutoReturn { get; set; } = false;
+
+        /// <summary>
+        /// 自动归还的时间,以秒为单位。默认:300s
+        /// </summary>
+        public int AutoReturnSeconds { get; set; } = 300;
+
+        /// <summary>
+        /// 扫描过期的文件的时间,以毫秒为单位。默认:3000ms
+        /// </summary>
+        public int ReturnFileScanMillis { get; set; } = 3000;
+
+        /// <summary>
+        /// 是否开启文件监控。默认:false
         /// </summary>
         public bool EnableFileWatcher { get; set; } = false;
 
         /// <summary>
-        /// File watcher path
+        /// 文件监控的目录
         /// </summary>
-        public string FileWatcherPath { get; set; }
+        public bool FileWatcherPath { get; set; }
 
         /// <summary>
-        /// Copy watcher folder file to file pool thread
+        /// 扫描文件监控目录的时间间隔,以毫秒为单位。默认:5000ms
         /// </summary>
-        public int FileWatcherCopyThread { get; set; } = 1;
+        public int FileWatcherScanIntervalMillis { get; set; } = 5000;
 
         /// <summary>
-        /// File watcher file last write seconds.
+        /// 文件监控工作线程数,默认:3
         /// </summary>
-        public int FileWatcherLastWrite { get; set; } = 30;
+        public int FileWatcherWorkThread { get; set; } = 3;
 
         /// <summary>
-        /// Skip file size is zero
+        /// 是否跳过拷贝文件大小为0KB的文件。默认:true
         /// </summary>
         public bool FileWatcherSkipZeroFile { get; set; } = true;
 
         /// <summary>
-        /// Scan file watecher path interval(ms)
+        /// 文件监控,读取时对数据的延迟,以秒为单位。默认:30s
+        /// 只有在当前时间30秒之前的文件才会被拷贝
         /// </summary>
-        public int ScanFileWatcherMillSeconds { get; set; } = 5000;
+        public int FileWatcherReadDelaySeconds { get; set; } = 30;
 
-        /// <summary>
-        /// Enable automatic return file to file pool
-        /// </summary>
-        public bool EnableAutoReturn { get; set; }
-
-        /// <summary>
-        /// Scan wait return file interval(ms)
-        /// </summary>
-        public int ScanReturnFileMillSeconds { get; set; } = 3000;
-
-        /// <summary>
-        /// Reutrn file expired time(s), beyond this time will automatic return file
-        /// </summary>
-        public int AutoReturnSeconds { get; set; } = 300;
     }
 }

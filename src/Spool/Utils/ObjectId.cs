@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -6,13 +6,13 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-namespace Spool.Utility
+namespace Spool.Utils
 {
     /// <summary>
     /// Represents an ObjectId
     /// </summary>
     [Serializable]
-    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
+    internal struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
     {
         // private static fields
         private static readonly DateTime UnixEpoch;

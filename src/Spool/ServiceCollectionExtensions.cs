@@ -1,35 +1,32 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Spool.Trains;
-using Spool.Utility;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Spool
 {
-    /// <summary>
-    /// Dependency injection extensions
-    /// </summary>
     public static class ServiceCollectionExtensions
     {
+
         /// <summary>
-        /// Add file pool injection
+        /// Add spool
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
         public static IServiceCollection AddSpool(this IServiceCollection services, Action<SpoolOptions> configure = null)
         {
-            configure ??= new Action<SpoolOptions>(c => { });
-
-            services.Configure(configure);
 
             services
-                .AddSingleton<IScheduleService, ScheduleService>()
-                .AddSingleton<IFilePoolFactory, DefaultFilePoolFactory>()
-                .AddTransient(typeof(IFilePool<>), typeof(FilePool<>))
-                .AddTransient<ITrainFactory, DefaultTrainFactory>()
-                .AddTransient<IFilePoolConfigurationSelector, DefaultFilePoolConfigurationSelector>();
+                .AddSingleton<IFilePoolFactory, FilePoolFactory>();
+
+            var c = configure ?? new Action<SpoolOptions>(o => { });
+
+            services.Configure<SpoolOptions>(c);
 
             return services;
         }
+
     }
 }

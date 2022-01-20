@@ -1,116 +1,66 @@
-﻿using Spool.Utility;
 using System;
+using System.IO;
 
 namespace Spool
 {
-    /// <summary>
-    /// Spool file info
-    /// </summary>
     public class SpoolFile : IEquatable<SpoolFile>
     {
         /// <summary>
-        /// The name of file pool
+        /// 文件池名称
         /// </summary>
+        /// <value></value>
         public string FilePool { get; set; }
 
         /// <summary>
-        /// The index of train
+        /// Worker序号
         /// </summary>
-        public int TrainIndex { get; set; }
+        /// <value></value>
+        public int WorkerNumber { get; set; }
 
         /// <summary>
-        /// File path
+        /// 文件存储路径
         /// </summary>
-        public string Path { get; set; }
+        /// <value></value>
+        public string FilePath { get; set; }
 
         /// <summary>
-        /// File extension
+        /// 文件扩展名
         /// </summary>
+        /// <value></value>
         public string FileExt
         {
             get
             {
-                return FilePathUtil.GetPathExtension(Path);
+                if (!string.IsNullOrWhiteSpace(FilePath))
+                {
+                    return Path.GetExtension(FilePath);
+                }
+                return string.Empty;
             }
         }
 
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        public SpoolFile()
-        {
-
-        }
-
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="filePool"></param>
-        /// <param name="trainIndex"></param>
-        public SpoolFile(string filePool, int trainIndex) : this(filePool, trainIndex, string.Empty)
-        {
-
-        }
-
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="filePool"></param>
-        /// <param name="trainIndex"></param>
-        /// <param name="path"></param>
-        public SpoolFile(string filePool, int trainIndex, string path)
+        public SpoolFile(string filePool, int workerNumber, string filePath)
         {
             FilePool = filePool;
-            TrainIndex = trainIndex;
-            Path = path;
+            WorkerNumber = workerNumber;
+            FilePath = filePath;
         }
 
-        /// <summary>
-        /// Clone a 'SpoolFile'
-        /// </summary>
-        /// <returns></returns>
-        public SpoolFile Clone()
-        {
-            return new SpoolFile(FilePool, TrainIndex, Path);
-        }
-
-        /// <summary>
-        /// Equals
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
         public bool Equals(SpoolFile other)
         {
+
             if (other == null)
             {
                 return false;
             }
 
-            return FilePool == other.FilePool && TrainIndex == other.TrainIndex && Path == other.Path;
+            return FilePool.Equals(other.FilePool, StringComparison.OrdinalIgnoreCase) && WorkerNumber == other.WorkerNumber && FilePath.Equals(other.FilePath, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Equals
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
-        {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            return obj is SpoolFile other && Equals(other);
-        }
-
-        /// <summary>
-        /// GetHashCode
-        /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
-            return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(Path) | TrainIndex.GetHashCode();
+            return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(FilePath) | WorkerNumber.GetHashCode();
         }
+        
     }
 }

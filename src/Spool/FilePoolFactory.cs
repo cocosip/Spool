@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace Spool
 {
-    public class DefaultFilePool
+    public class FilePoolFactory : IFilePoolFactory
     {
-        
+
     }
 }

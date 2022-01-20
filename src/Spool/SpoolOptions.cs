@@ -1,18 +1,9 @@
-﻿namespace Spool
+namespace Spool
 {
-    /// <summary>
-    /// SpoolOptions
-    /// </summary>
     public class SpoolOptions
     {
-        /// <summary>
-        /// All file pool configurations
-        /// </summary>
-        public FilePoolConfigurations FilePools { get; }
+        public FilePoolConfigurations FilePools { get; set; }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
         public SpoolOptions()
         {
             FilePools = new FilePoolConfigurations();
