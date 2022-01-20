@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Spool.IO
@@ -11,5 +12,8 @@ namespace Spool.IO
                 File.Delete(filePath);
             }
         }
+
+
+       
     }
 }

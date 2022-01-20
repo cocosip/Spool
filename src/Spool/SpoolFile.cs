@@ -39,6 +39,11 @@ namespace Spool
             }
         }
 
+        public SpoolFile(string filePool, int workerNumber) : this(filePool, workerNumber, "")
+        {
+
+        }
+
         public SpoolFile(string filePool, int workerNumber, string filePath)
         {
             FilePool = filePool;
@@ -61,6 +66,6 @@ namespace Spool
         {
             return StringComparer.InvariantCulture.GetHashCode(FilePool) | StringComparer.InvariantCulture.GetHashCode(FilePath) | WorkerNumber.GetHashCode();
         }
-        
+
     }
 }

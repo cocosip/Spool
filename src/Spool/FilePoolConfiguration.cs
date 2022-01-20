@@ -41,6 +41,12 @@ namespace Spool
         public int AutoReturnSeconds { get; set; } = 300;
 
         /// <summary>
+        /// 扫描过期的文件,开始的延迟时间,以毫秒为单位。默认:5000ms
+        /// </summary>
+        /// <value></value>
+        public int ReturnFileScanStartDelayMillis { get; set; } = 5000;
+
+        /// <summary>
         /// 扫描过期的文件的时间,以毫秒为单位。默认:3000ms
         /// </summary>
         public int ReturnFileScanMillis { get; set; } = 3000;
@@ -53,7 +59,13 @@ namespace Spool
         /// <summary>
         /// 文件监控的目录
         /// </summary>
-        public bool FileWatcherPath { get; set; }
+        public string FileWatcherPath { get; set; }
+
+        /// <summary>
+        /// 扫描文件监控目录,开始的延迟时间,以毫秒为单位。默认:5000ms
+        /// </summary>
+        /// <value></value>
+        public int FileWatcherScanStartDelayMillis { get; set; } = 5000;
 
         /// <summary>
         /// 扫描文件监控目录的时间间隔,以毫秒为单位。默认:5000ms

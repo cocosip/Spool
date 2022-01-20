@@ -1,16 +1,21 @@
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Spool.IO
 {
     internal static class DirectoryHelper
     {
-        internal static void CreateIfNotExists(string directory)
+        internal static bool CreateIfNotExists(string directory)
         {
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
+                return true;
             }
+            return false;
         }
+
 
         internal static void DeleteIfExist(string directory, bool recursive = false)
         {
@@ -36,7 +41,6 @@ namespace Spool.IO
                     File.Copy(i.FullName, Path.Combine(targetDir, i.Name), true);
                 }
             }
-
         }
 
     }
