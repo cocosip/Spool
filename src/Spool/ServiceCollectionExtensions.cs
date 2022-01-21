@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Spool.Workers;
 
 namespace Spool
 {
@@ -19,7 +20,8 @@ namespace Spool
         {
 
             services
-                .AddSingleton<IFilePoolFactory, FilePoolFactory>();
+                .AddSingleton<IFilePoolFactory, FilePoolFactory>()
+                .AddTransient<IWorkerFactory, WorkerFactory>();
 
             var c = configure ?? new Action<SpoolOptions>(o => { });
 

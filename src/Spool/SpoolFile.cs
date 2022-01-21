@@ -27,7 +27,7 @@ namespace Spool
         /// 文件扩展名
         /// </summary>
         /// <value></value>
-        public string FileExt
+        public string Ext
         {
             get
             {
