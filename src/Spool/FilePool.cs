@@ -174,6 +174,12 @@ namespace Spool
             return await worker.WriteAsync(stream, ext);
         }
 
+        public async Task<SpoolFile> WriteAsync(string fileName)
+        {
+            var worker = GetWriteWorker();
+            return await worker.WriteAsync(fileName);
+        }
+
 
         public List<SpoolFile> Get(int count = 1)
         {
@@ -212,7 +218,7 @@ namespace Spool
 
         private IWorker GetReadWorker()
         {
-            var worker = _workerDict.Values.FirstOrDefault(x => x.State == WorkerState.Read || x.State == WorkerState.ReadWrite && !x.IsPendingEmpty());
+            var worker = _workerDict.Values.Where(x => x.State == WorkerState.Read || x.State == WorkerState.ReadWrite && !x.IsPendingEmpty()).OrderBy(x => x.Number).FirstOrDefault();
             if (worker == null)
             {
                 worker = _workerDict.Values.Where(x => x.State == WorkerState.Pending).OrderBy(x => x.Number).FirstOrDefault();
@@ -245,6 +251,14 @@ namespace Spool
 
             }
         }
+
+        private void ReadEmpty(IWorker worker)
+        {
+
+
+        }
+
+
         private int GetNextWorkerNumber()
         {
             var max = _workerDict.Values.Max(x => x.Number);
@@ -269,7 +283,6 @@ namespace Spool
                     }
 
                     await Task.Delay(_returnFileScanMillis, _cancellationTokenSource.Token);
-
                 }
 
             }, TaskCreationOptions.LongRunning);
@@ -305,7 +318,6 @@ namespace Spool
 
                         if (pendingFiles.Any())
                         {
-
                             await WriteWatcherFileToPoolAsync(pendingFiles);
                         }
                         else
@@ -320,8 +332,6 @@ namespace Spool
                     }
 
                     await Task.Delay(_fileWatcherScanIntervalMillis, _cancellationTokenSource.Token);
-
-
                 }
 
             }, TaskCreationOptions.LongRunning);
@@ -338,14 +348,14 @@ namespace Spool
                 {
                     var task = Task.Factory.StartNew(async () =>
                     {
-
                         while (!queue.IsEmpty)
                         {
                             try
                             {
                                 if (queue.TryDequeue(out string file))
                                 {
-
+                                    await WriteAsync(file);
+                                    PathUtil.DeleteFileIfExists(file);
                                 }
                                 else
                                 {
@@ -360,7 +370,6 @@ namespace Spool
 
                         }
 
-
                     }, _cancellationTokenSource.Token);
 
                     tasks.Add(task);
@@ -373,8 +382,8 @@ namespace Spool
                 {
                     try
                     {
-                        var worker = GetWriteWorker();
-                        await worker.WriteAsync(file);
+                        await WriteAsync(file);
+                        PathUtil.DeleteFileIfExists(file);
                     }
                     catch (Exception ex)
                     {

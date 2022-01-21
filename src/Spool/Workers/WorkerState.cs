@@ -5,6 +5,7 @@ namespace Spool.Workers
         Pending = 1,
         Read = 2,
         Write = 4,
-        ReadWrite = 8
+        ReadWrite = 8,
+        Complete = 16
     }
 }

@@ -14,7 +14,8 @@ namespace Spool.Workers
         private int _workerMaxFile = 2000;
         private int _writingCount = 0;
         private FilePoolConfiguration _configuration;
-        private Action<int, WorkerState, WorkerState> WriteFullFunc = null;
+        private Action<IWorker, WorkerState, WorkerState> WriteFullFunc = null;
+        private Action<IWorker> ReadEmptyFunc = null;
 
         private readonly object _writeSync = new object();
 
@@ -133,7 +134,7 @@ namespace Spool.Workers
                     {
                         _logger.LogDebug("Worker(WriteFull) {Name} state {State} incorrect.", Name, State);
                     }
-                    WriteFullFunc?.Invoke(Number, oldState, newState);
+                    WriteFullFunc?.Invoke(this, oldState, newState);
                     return false;
                 }
                 else
@@ -170,7 +171,7 @@ namespace Spool.Workers
         {
             if (PathUtil.IsSamePathRoot(fileName, Path))
             {
-                return MoveFileInternal(fileName);
+                return CopyFileInternal(fileName);
             }
             else
             {
@@ -235,7 +236,7 @@ namespace Spool.Workers
                 {
                     try
                     {
-                        PathUtil.DeleteIfExists(spoolFile.FilePath);
+                        PathUtil.DeleteFileIfExists(spoolFile.FilePath);
                     }
                     catch (Exception ex)
                     {
@@ -252,22 +253,25 @@ namespace Spool.Workers
                 }
             }
 
-            if (_pendingQueue.IsEmpty && _progressingDict.IsEmpty)
+            if (_pendingQueue.IsEmpty && _progressingDict.IsEmpty && State == WorkerState.Read)
             {
-                //
+                ChangeState(WorkerState.Complete);
+                
+                //WriteEmpty
+                ReadEmptyFunc?.Invoke(this);
 
             }
 
         }
 
-        private SpoolFile MoveFileInternal(string fileName)
+        private SpoolFile CopyFileInternal(string fileName)
         {
             var spoolFile = new SpoolFile(_configuration.Name, Number);
             try
             {
                 var ext = System.IO.Path.GetExtension(fileName);
                 var filePath = System.IO.Path.Combine(Path, $"{ObjectId.GenerateNewStringId()}{ext}");
-                File.Move(fileName, filePath);
+                File.Copy(fileName, filePath);
                 spoolFile.FilePath = filePath;
                 _pendingQueue.Enqueue(spoolFile);
             }

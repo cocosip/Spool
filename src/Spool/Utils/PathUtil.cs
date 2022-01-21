@@ -18,7 +18,7 @@ namespace Spool.Utils
             return false;
         }
 
-        public static void DeleteIfExist(string directory, bool recursive = false)
+        public static void DeleteIfExists(string directory, bool recursive = false)
         {
             if (Directory.Exists(directory))
             {
@@ -26,7 +26,7 @@ namespace Spool.Utils
             }
         }
 
-        public static void DeleteIfExists(string path)
+        public static void DeleteFileIfExists(string path)
         {
             if (File.Exists(path))
             {
