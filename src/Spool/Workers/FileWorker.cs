@@ -256,10 +256,9 @@ namespace Spool.Workers
             if (_pendingQueue.IsEmpty && _progressingDict.IsEmpty && State == WorkerState.Read)
             {
                 ChangeState(WorkerState.Complete);
-                
+
                 //WriteEmpty
                 ReadEmptyFunc?.Invoke(this);
-
             }
 
         }
