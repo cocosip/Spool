@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using Spool.Events;
-using Spool.Utility;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Spool.Events;
+using Spool.Utility;
 
 namespace Spool.Trains
 {
@@ -65,6 +65,7 @@ namespace Spool.Trains
         public int ProgressingCount { get { return _progressingDict.Count; } }
 
         private readonly ILogger _logger;
+        private readonly IFileNameGenerator _fileNameGenerator;
         private readonly FilePoolConfiguration _configuration;
 
         private bool _initialized = false;
@@ -75,14 +76,17 @@ namespace Spool.Trains
         /// Ctor
         /// </summary>
         /// <param name="logger"></param>
+        /// <param name="fileNameGenerator"></param>
         /// <param name="configuration"></param>
         /// <param name="index"></param>
         public Train(
             ILogger<Train> logger,
+            IFileNameGenerator fileNameGenerator,
             FilePoolConfiguration configuration,
             int index)
         {
             _logger = logger;
+            _fileNameGenerator = fileNameGenerator;
             _configuration = configuration;
 
             Name = TrainUtil.GenerateTrainName(index);
@@ -402,8 +406,9 @@ namespace Spool.Trains
         /// </summary>
         private string GenerateFilePath(string fileExt)
         {
+            var fileName = _fileNameGenerator.GenerateFileName(fileExt);
             // D:\\pool1\\_000001_
-            var fileName = $"{ObjectId.GenerateNewStringId()}{fileExt}";
+            //var fileName = $"{ObjectId.GenerateNewStringId()}{fileExt}";
             var path = System.IO.Path.Combine(_configuration.Path, $"{Name}", fileName);
             return path;
         }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35913.81 d17.13
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2B989BA3-0B94-4D82-9730-2D4295F7BB27}"
 EndProject
@@ -15,14 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{35BF
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{BA4EB35D-65A6-47A2-9C2E-703CD670DAE6}"
 	ProjectSection(SolutionItems) = preProject
-		build\common.props = build\common.props
-		build\credentials.cake = build\credentials.cake
-		build\packages.cake = build\packages.cake
-		build\parameters.cake = build\parameters.cake
-		build\paths.cake = build\paths.cake
-		build\util.cake = build\util.cake
-		build\version.cake = build\version.cake
-		build\version.props = build\version.props
+		common.props = common.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spool.Sample", "samples\Spool.Sample\Spool.Sample.csproj", "{06D3FDA6-9F4A-4A25-BA32-692B7F5D0FD3}"

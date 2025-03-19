@@ -24,6 +24,21 @@ namespace Spool
         public string Path { get; set; }
 
         /// <summary>
+        /// FileName
+        /// </summary>
+        public string FileName
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Path))
+                {
+                    return System.IO.Path.GetFileName(Path);
+                }
+                return "";
+            }
+        }
+
+        /// <summary>
         /// File extension
         /// </summary>
         public string FileExt
