@@ -1,22 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\common.props" />
+	<Import Project="..\..\build\common.props" />
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>Spool</AssemblyName>
-    <PackageId>Spool</PackageId>
-    <Description>File Storage Pool</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<AssemblyName>Spool</AssemblyName>
+		<PackageId>Spool</PackageId>
+		<Description>File Storage Pool</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="FilePool.cs~RF35128c20.TMP" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3" />
+		<PackageReference Include="System.Threading.Channels" Version="9.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0">
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	</ItemGroup>
 
 </Project>
