@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<Version>2.2.0</Version>
+		<Version>2.3.0</Version>
 		<Authors>virtual</Authors>
 		<Product>Spool</Product>
 		<PackageProjectUrl>https://github.com/cocosip/Spool</PackageProjectUrl>
