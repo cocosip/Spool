@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace Spool.Trains
 {
@@ -12,11 +12,12 @@ namespace Spool.Trains
         private readonly ILogger _logger;
         private readonly IServiceProvider _serviceProvider;
 
-
         /// <summary>
         /// Ctor
         /// </summary>
-        public DefaultTrainFactory(ILogger<DefaultTrainFactory> logger, IServiceProvider serviceProvider)
+        public DefaultTrainFactory(
+            ILogger<DefaultTrainFactory> logger, 
+            IServiceProvider serviceProvider)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -30,7 +31,7 @@ namespace Spool.Trains
         /// <returns></returns>
         public ITrain Create(FilePoolConfiguration configuration, int index)
         {
-            ITrain train = new Train(_serviceProvider.GetService<ILogger<Train>>(), configuration, index);
+            ITrain train = ActivatorUtilities.CreateInstance<Train>(_serviceProvider, configuration, index);
             _logger.LogDebug("Create new train '{0}' in file pool '{1}' .", index, configuration.Name);
             return train;
         }

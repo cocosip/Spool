@@ -20,6 +20,7 @@ namespace Spool.Sample
             services
                 .AddLogging(l =>
                 {
+                    l.SetMinimumLevel(LogLevel.Debug);
                     l.AddConsole();
                 })
                 .AddSpool();
@@ -47,7 +48,7 @@ namespace Spool.Sample
 
             var filePool = _filePoolFactory.GetOrCreate(DefaultFilePool.Name);
 
-            //Run();
+            Run();
 
             Console.ReadLine();
         }
